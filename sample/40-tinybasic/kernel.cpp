@@ -2,7 +2,7 @@
 // kernel.cpp
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014  R. Stange <rsta2@o2online.de>
+// Copyright (C) 2014-2017  R. Stange <rsta2@o2online.de>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,34 +18,32 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 #include "kernel.h"
+#include <circle/usb/usbkeyboard.h>
 #include <circle/string.h>
-#include <circle/debug.h>
+#include <circle/util.h>
 #include <assert.h>
 
 static const char FromKernel[] = "kernel";
 
-extern void main_basic();
-
-CKernel* g_kernel = 0;
+CKernel *CKernel::s_pThis = 0;
 
 CKernel::CKernel (void)
-:	m_Memory (TRUE),
-	m_Screen (m_Options.GetWidth (), m_Options.GetHeight ()),
-	m_Logger (m_Options.GetLogLevel ())
+:	m_Screen (m_Options.GetWidth (), m_Options.GetHeight ()),
+	m_Timer (&m_Interrupt),
+	m_Logger (m_Options.GetLogLevel (), &m_Timer),
+	m_USBHCI (&m_Interrupt, &m_Timer),
+	m_ShutdownMode (ShutdownNone)
 {
+	s_pThis = this;
+
 	m_ActLED.Blink (5);	// show we are alive
 }
 
 CKernel::~CKernel (void)
 {
+	s_pThis = 0;
 }
 
-void CKernel::putchar(char c)
-{
-	char msg[2];
-	msg[0] = c;
-	m_Screen.Write(msg, 1);
-}
 boolean CKernel::Initialize (void)
 {
 	boolean bOK = TRUE;
@@ -54,12 +52,12 @@ boolean CKernel::Initialize (void)
 	{
 		bOK = m_Screen.Initialize ();
 	}
-	
+
 	if (bOK)
 	{
 		bOK = m_Serial.Initialize (115200);
 	}
-	
+
 	if (bOK)
 	{
 		CDevice *pTarget = m_DeviceNameService.GetDevice (m_Options.GetLogDevice (), FALSE);
@@ -70,7 +68,22 @@ boolean CKernel::Initialize (void)
 
 		bOK = m_Logger.Initialize (pTarget);
 	}
-	
+
+	if (bOK)
+	{
+		bOK = m_Interrupt.Initialize ();
+	}
+
+	if (bOK)
+	{
+		bOK = m_Timer.Initialize ();
+	}
+
+	if (bOK)
+	{
+		bOK = m_USBHCI.Initialize ();
+	}
+
 	return bOK;
 }
 
@@ -78,36 +91,70 @@ TShutdownMode CKernel::Run (void)
 {
 	m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
 
-	// show the character set on screen
-	/*
-	for (char chChar = ' '; chChar <= '~'; chChar++)
+	CUSBKeyboardDevice *pKeyboard = (CUSBKeyboardDevice *) m_DeviceNameService.GetDevice ("ukbd1", FALSE);
+	if (pKeyboard == 0)
 	{
-		if (chChar % 8 == 0)
-		{
-			m_Screen.Write ("\n", 1);
-		}
+		m_Logger.Write (FromKernel, LogError, "Keyboard not found");
 
-		CString Message;
-		Message.Format ("%02X: \'%c\' ", (unsigned) chChar, chChar);
-		
-		m_Screen.Write ((const char *) Message, Message.GetLength ());
+		return ShutdownHalt;
 	}
-	m_Screen.Write ("\n", 1);
-	*/
 
-	const char* msg1 = "mcarter was here";
-	m_Screen.Write(msg1, 16);
-
-	main_basic();
-
-#ifndef NDEBUG
-	// some debugging features
-	m_Logger.Write (FromKernel, LogDebug, "Dumping the start of the ATAGS");
-	debug_hexdump ((void *) 0x100, 128, FromKernel);
-
-	m_Logger.Write (FromKernel, LogNotice, "The following assertion will fail");
-	assert (1 == 2);
+#if 1	// set to 0 to test raw mode
+	pKeyboard->RegisterShutdownHandler (ShutdownHandler);
+	pKeyboard->RegisterKeyPressedHandler (KeyPressedHandler);
+#else
+	pKeyboard->RegisterKeyStatusHandlerRaw (KeyStatusHandlerRaw);
 #endif
 
-	return ShutdownHalt;
+	m_Logger.Write (FromKernel, LogNotice, "Just type something!");
+
+	for (unsigned nCount = 0; m_ShutdownMode == ShutdownNone; nCount++)
+	{
+		// CUSBKeyboardDevice::UpdateLEDs() must not be called in interrupt context,
+		// that's why this must be done here. This does nothing in raw mode.
+		pKeyboard->UpdateLEDs ();
+
+		m_Screen.Rotor (0, nCount);
+		m_Timer.MsDelay (100);
+	}
+
+	return m_ShutdownMode;
+}
+
+void CKernel::KeyPressedHandler (const char *pString)
+{
+	assert (s_pThis != 0);
+	s_pThis->m_Screen.Write (pString, strlen (pString));
+}
+
+void CKernel::ShutdownHandler (void)
+{
+	assert (s_pThis != 0);
+	s_pThis->m_ShutdownMode = ShutdownReboot;
+}
+
+void CKernel::KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned char RawKeys[6])
+{
+	assert (s_pThis != 0);
+
+	CString Message;
+	Message.Format ("Key status (modifiers %02X)", (unsigned) ucModifiers);
+
+	for (unsigned i = 0; i < 6; i++)
+	{
+		if (RawKeys[i] != 0)
+		{
+			CString KeyCode;
+			KeyCode.Format (" %02X", (unsigned) RawKeys[i]);
+
+			Message.Append (KeyCode);
+		}
+	}
+
+	s_pThis->m_Logger.Write (FromKernel, LogNotice, Message);
+}
+
+int CKernel::putchar(int c)
+{
+	return 666; // TODO
 }

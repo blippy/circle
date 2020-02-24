@@ -2,7 +2,7 @@
 // kernel.h
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014  R. Stange <rsta2@o2online.de>
+// Copyright (C) 2014-2017  R. Stange <rsta2@o2online.de>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -26,7 +26,11 @@
 #include <circle/devicenameservice.h>
 #include <circle/screen.h>
 #include <circle/serial.h>
+#include <circle/exceptionhandler.h>
+#include <circle/interrupt.h>
+#include <circle/timer.h>
 #include <circle/logger.h>
+#include <circle/usb/usbhcidevice.h>
 #include <circle/types.h>
 
 enum TShutdownMode
@@ -45,8 +49,14 @@ public:
 	boolean Initialize (void);
 
 	TShutdownMode Run (void);
-	void putchar(char c);
+	int putchar(int c);
 
+private:
+	static void KeyPressedHandler (const char *pString);
+	static void ShutdownHandler (void);
+
+	static void KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned char RawKeys[6]);
+	
 private:
 	// do not change this order
 	CMemorySystem		m_Memory;
@@ -55,9 +65,15 @@ private:
 	CDeviceNameService	m_DeviceNameService;
 	CScreenDevice		m_Screen;
 	CSerialDevice		m_Serial;
+	CExceptionHandler	m_ExceptionHandler;
+	CInterruptSystem	m_Interrupt;
+	CTimer			m_Timer;
 	CLogger			m_Logger;
-};
+	CUSBHCIDevice		m_USBHCI;
 
-extern CKernel* g_kernel;
+	volatile TShutdownMode m_ShutdownMode;
+
+	static CKernel *s_pThis;
+};
 
 #endif

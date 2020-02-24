@@ -25,7 +25,6 @@ int main (void)
 	// cannot return here because some destructors used in CKernel are not implemented
 
 	CKernel Kernel;
-	g_kernel = &Kernel;
 	if (!Kernel.Initialize ())
 	{
 		halt ();

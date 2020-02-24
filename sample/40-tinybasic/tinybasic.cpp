@@ -58,6 +58,8 @@
 #define kVersion "v0.15"
 #include "kernel.h"
 
+CKernel* g_kernel = 0;
+
 // IF testing with Visual C, this needs to be the first thing in the file.
 //#include "stdafx.h"
 
@@ -2243,9 +2245,10 @@ void loop1()
 }
 
 //int main( int argc, char ** argv )
-void main_basic()
+void main_basic(CKernel* kernel)
 {
 	puts("Starting up TinyBasic Plus\n");
+	g_kernel = kernel;
 	//return;
 
     setup();

@@ -15,5 +15,6 @@ esac
 
 EXE=/home/pi/Documents/qemu/builds/arm-softmmu/qemu-system-arm
 IMG=~/repos/circle/sample/08*/kernel7.img
+IMG=kernel7.img
 ls $IMG
 $EXE -M raspi2 -bios  $IMG  -usbdevice keyboard
