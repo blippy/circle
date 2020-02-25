@@ -32,6 +32,8 @@
 #include <circle/logger.h>
 #include <circle/usb/usbhcidevice.h>
 #include <circle/types.h>
+#include <circle/input/keyboardbuffer.h>
+
 
 enum TShutdownMode
 {
@@ -50,6 +52,7 @@ public:
 
 	TShutdownMode Run (void);
 	int putchar(int c);
+	CKeyboardBuffer* 	m_keyb;
 
 private:
 	static void KeyPressedHandler (const char *pString);
@@ -57,7 +60,7 @@ private:
 
 	static void KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned char RawKeys[6]);
 	
-private:
+public:
 	// do not change this order
 	CMemorySystem		m_Memory;
 	CActLED			m_ActLED;
@@ -75,5 +78,8 @@ private:
 
 	static CKernel *s_pThis;
 };
+
+extern CKernel *g_kernel;
+int getchar();
 
 #endif

@@ -58,7 +58,7 @@
 #define kVersion "v0.15"
 #include "kernel.h"
 
-CKernel* g_kernel = 0;
+//extern CKernel* g_kernel = 0;
 
 // IF testing with Visual C, this needs to be the first thing in the file.
 //#include "stdafx.h"
@@ -93,10 +93,6 @@ void putchar(char c)
 	g_kernel->putchar(c);
 }
 
-int getchar()
-{
-	return 666; // TODO sort out
-}
 
 
 void puts(char* str)
