@@ -27,6 +27,7 @@
 
 static const char FromKernel[] = "kernel";
 
+void main_basic();
 CKernel *g_kernel = 0;
 
 CKernel *CKernel::s_pThis = 0;
@@ -111,12 +112,13 @@ TShutdownMode CKernel::Run (void)
 	if (pKeyboard == 0)
 	{
 		m_Logger.Write (FromKernel, LogError, "Keyboard not found");
-
 		return ShutdownHalt;
 	}
 
 	//CKeyboardBuffer keyb(pKeyboard);
 	m_keyb = new CKeyboardBuffer(pKeyboard);
+	main_basic();
+	return m_ShutdownMode;
 	   
 	for (unsigned nCount = 0; 1; nCount++)
         {

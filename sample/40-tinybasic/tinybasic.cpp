@@ -2237,18 +2237,21 @@ void cmd_Files( void )
 }
 #endif
 
+/*
 void loop1()
 {
 
 }
+*/
 
 //int main( int argc, char ** argv )
-void main_basic(CKernel* kernel)
+//void main_basic(CKernel* kernel)
+void main_basic()
 {
 	puts("Starting up TinyBasic Plus\n");
-	g_kernel = kernel;
+	//g_kernel = kernel;
 	//return;
 
     setup();
-    loop1();
+    loop();
 }
