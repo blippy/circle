@@ -125,6 +125,7 @@ TShutdownMode CKernel::Run (void)
 			c = getchar();
 			n++;
 		}  while(c != '\n');
+		//putchar('x'); putchar('x');
 		CString msg;
 		msg.Format("Size of input: %d\n", n);
 		m_Screen.Write((const char*)msg, msg.GetLength());
@@ -206,7 +207,8 @@ void CKernel::KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned cha
 }
 */
 
-int CKernel::putchar(int c)
+int putchar(int c)
 {
-	return 666; // TODO
+	g_kernel->m_Screen.Write(&c, 1);
+	return c;
 }

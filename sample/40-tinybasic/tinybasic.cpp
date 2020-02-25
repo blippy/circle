@@ -87,11 +87,13 @@ char eliminateCompileErrors = 1;  // fix to suppress arduino build errors
 
 //#undef ENABLE_SDCARD
 
+/*
 #include <circle/string.h>
 void putchar(char c)
 {
 	g_kernel->putchar(c);
 }
+*/
 
 
 

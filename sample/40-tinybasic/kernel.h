@@ -51,7 +51,7 @@ public:
 	boolean Initialize (void);
 
 	TShutdownMode Run (void);
-	int putchar(int c);
+	//int putchar(int c);
 	CKeyboardBuffer* 	m_keyb;
 
 private:
@@ -81,5 +81,6 @@ public:
 
 extern CKernel *g_kernel;
 int getchar();
+int putchar(int c);
 
 #endif
