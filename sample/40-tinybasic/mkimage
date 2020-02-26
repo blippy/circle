@@ -19,3 +19,6 @@ source basic.env
 fallocate -l 34M $PART
 mkfs.fat -F 32 $PART
 
+./mnt-image
+cp README.md $PARTDIR
+./mnt-image -u

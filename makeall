@@ -39,6 +39,20 @@ cd ..
 
 cd ..
 
+# added by mcarter for tinybasic 26-Feb-2020
+cd addon
+
+cd SDCard
+$make $1 $2 || exit
+cd ..
+
+cd fatfs
+$make $1 $2 || exit
+cd ..
+
+cd ..
+# end of mcarter additions
+
 if [[ $makesample == true ]]
 then
 	cd sample

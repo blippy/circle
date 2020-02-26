@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+function print_help {
+cat <<EOF
+Mount/unmount a disk partition for QEMU use
+Description here
+etc
+EOF
+}
+ 
+source basic.env
+
+#MOUNT=1
+
+function do_unmount {
+	echo "Unmounting"
+	sudo umount $PARTDIR
+}
+
+
+while getopts "hu" arg; do
+	case $arg in
+	    	h) print_help ; exit ;;
+	    	u) do_unmount ; exit ;;
+	esac
+done
+
+
+sudo mount -o umask=000 $PART $PARTDIR
+
+#echo "mnt=$MOUNT"
+#if [ $MOUNT -eq 1 ]
+#then
+#else
+#fi
+

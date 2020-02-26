@@ -28,37 +28,41 @@
 #include <circle/macros.h>
 
 
+#define DRIVE           "SD:"
+//#define DRIVE         "USB:"
+#define FILENAME        "/circle.txt"
 
 
-struct TCHSAddress
-{
-        unsigned char Head;
-        unsigned char Sector       : 6,
-                      CylinderHigh : 2;
-        unsigned char CylinderLow;
+/*
+   struct TCHSAddress
+   {
+   unsigned char Head;
+   unsigned char Sector       : 6,
+CylinderHigh : 2;
+unsigned char CylinderLow;
 }
 PACKED;
 
 struct TPartitionEntry
 {
-        unsigned char   Status;
-        TCHSAddress     FirstSector;
-        unsigned char   Type;
-        TCHSAddress     LastSector;
-        unsigned        LBAFirstSector;
-        unsigned        NumberOfSectors;
+unsigned char   Status;
+TCHSAddress     FirstSector;
+unsigned char   Type;
+TCHSAddress     LastSector;
+unsigned        LBAFirstSector;
+unsigned        NumberOfSectors;
 }
 PACKED;
 
 struct TMasterBootRecord
 {
-        unsigned char   BootCode[0x1BE];
-        TPartitionEntry Partition[4];
-        unsigned short  BootSignature;
-        #define BOOT_SIGNATURE          0xAA55
+unsigned char   BootCode[0x1BE];
+TPartitionEntry Partition[4];
+unsigned short  BootSignature;
+#define BOOT_SIGNATURE          0xAA55
 }
 PACKED;
-
+*/
 
 
 static const char FromKernel[] = "kernel";
@@ -69,10 +73,11 @@ CKernel *g_kernel = 0;
 CKernel *CKernel::s_pThis = 0;
 
 CKernel::CKernel (void)
-:	m_Screen (m_Options.GetWidth (), m_Options.GetHeight ()),
+	:	m_Screen (m_Options.GetWidth (), m_Options.GetHeight ()),
 	m_Timer (&m_Interrupt),
 	m_Logger (m_Options.GetLogLevel (), &m_Timer),
 	m_USBHCI (&m_Interrupt, &m_Timer),
+	m_EMMC (&m_Interrupt, &m_Timer, &m_ActLED),
 	m_ShutdownMode (ShutdownNone)
 {
 	s_pThis = this;
@@ -111,6 +116,8 @@ boolean CKernel::Initialize (void)
 
 	if (bOK) bOK = m_USBHCI.Initialize ();
 
+	init_sdcard();
+
 	return bOK;
 }
 
@@ -127,56 +134,163 @@ int getchar()
 	return c;
 }
 
-TShutdownMode CKernel::run_sdcard()
+void CKernel::init_sdcard()
 {
-        m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
+	if(m_EMMC.Initialize())
+		m_Logger.Write (FromKernel, LogNotice, "SD card initialised");
+	else
+		m_Logger.Write (FromKernel, LogError, "SD card initialisation FAILED");
 
-        CDevice *pUMSD1 = m_DeviceNameService.GetDevice ("umsd1", TRUE);
-        if (pUMSD1 == 0)
-        {
-                m_Logger.Write (FromKernel, LogError, "USB mass storage device not found");
+	/*
+	   m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
 
-                return ShutdownHalt;
-        }
+	   CDevice *pUMSD1 = m_DeviceNameService.GetDevice ("umsd1", TRUE);
+	   if (pUMSD1 == 0)
+	   {
+	   m_Logger.Write (FromKernel, LogError, "USB mass storage device not found");
 
-        u64 ullOffset = 0 * UMSD_BLOCK_SIZE;
-        if (pUMSD1->Seek (ullOffset) != ullOffset)
-        {
-                m_Logger.Write (FromKernel, LogError, "Seek error");
+	   return ShutdownHalt;
+	   }
 
-                return ShutdownHalt;
-        }
+	   u64 ullOffset = 0 * UMSD_BLOCK_SIZE;
+	   if (pUMSD1->Seek (ullOffset) != ullOffset)
+	   {
+	   m_Logger.Write (FromKernel, LogError, "Seek error");
 
-        TMasterBootRecord MBR;
-        if (pUMSD1->Read (&MBR, sizeof MBR) != (int) sizeof MBR)
-        {
-                m_Logger.Write (FromKernel, LogError, "Read error");
+	   return ShutdownHalt;
+	   }
 
-                return ShutdownHalt;
-        }
+	   TMasterBootRecord MBR;
+	   if (pUMSD1->Read (&MBR, sizeof MBR) != (int) sizeof MBR)
+	   {
+	   m_Logger.Write (FromKernel, LogError, "Read error");
 
-        if (MBR.BootSignature != BOOT_SIGNATURE)
-        {
-                m_Logger.Write (FromKernel, LogError, "Boot signature not found");
+	   return ShutdownHalt;
+	   }
 
-                return ShutdownHalt;
-        }
+	   if (MBR.BootSignature != BOOT_SIGNATURE)
+	   {
+	   m_Logger.Write (FromKernel, LogError, "Boot signature not found");
 
-        m_Logger.Write (FromKernel, LogNotice, "Dumping the partition table");
-        m_Logger.Write (FromKernel, LogNotice, "# Status Type  1stSector    Sectors");
+	   return ShutdownHalt;
+	   }
 
-        for (unsigned nPartition = 0; nPartition < 4; nPartition++)
-        {
-                m_Logger.Write (FromKernel, LogNotice, "%u %02X     %02X   %10u %10u",
-                                nPartition+1,
-                                (unsigned) MBR.Partition[nPartition].Status,
-                                (unsigned) MBR.Partition[nPartition].Type,
-                                MBR.Partition[nPartition].LBAFirstSector,
-                                MBR.Partition[nPartition].NumberOfSectors);
-        }
+	   m_Logger.Write (FromKernel, LogNotice, "Dumping the partition table");
+	   m_Logger.Write (FromKernel, LogNotice, "# Status Type  1stSector    Sectors");
 
-        return ShutdownHalt;
-	
+	   for (unsigned nPartition = 0; nPartition < 4; nPartition++)
+	   {
+	   m_Logger.Write (FromKernel, LogNotice, "%u %02X     %02X   %10u %10u",
+	   nPartition+1,
+	   (unsigned) MBR.Partition[nPartition].Status,
+	   (unsigned) MBR.Partition[nPartition].Type,
+	   MBR.Partition[nPartition].LBAFirstSector,
+	   MBR.Partition[nPartition].NumberOfSectors);
+	   }
+
+	   return ShutdownHalt;
+	   */
+
+}
+
+void CKernel::test_sdcard()
+{
+	// Mount file system
+	if (f_mount (&m_FileSystem, DRIVE, 1) != FR_OK)
+	{
+		m_Logger.Write (FromKernel, LogPanic, "Cannot mount drive: %s", DRIVE);
+	}
+
+	// Show contents of root directory
+	DIR Directory;
+	FILINFO FileInfo;
+	FRESULT Result = f_findfirst (&Directory, &FileInfo, DRIVE "/", "*");
+	for (unsigned i = 0; Result == FR_OK && FileInfo.fname[0]; i++)
+	{
+		if (!(FileInfo.fattrib & (AM_HID | AM_SYS)))
+		{
+			CString FileName;
+			FileName.Format ("%-19s", FileInfo.fname);
+
+			m_Screen.Write ((const char *) FileName, FileName.GetLength ());
+
+			if (i % 4 == 3)
+			{
+				m_Screen.Write ("\n", 1);
+			}
+		}
+
+		Result = f_findnext (&Directory, &FileInfo);
+	}
+	m_Screen.Write ("\n", 1);
+
+
+	// Create file and write to it
+	FIL File;
+	Result = f_open (&File, DRIVE FILENAME, FA_WRITE | FA_CREATE_ALWAYS);
+	if (Result != FR_OK)
+	{
+		m_Logger.Write (FromKernel, LogPanic, "Cannot create file: %s", FILENAME);
+	}
+
+	for (unsigned nLine = 1; nLine <= 5; nLine++)
+	{
+		CString Msg;
+		Msg.Format ("Hello File! (Line %u)\n", nLine);
+
+		unsigned nBytesWritten;
+		if (   f_write (&File, (const char *) Msg, Msg.GetLength (), &nBytesWritten) != FR_OK
+				|| nBytesWritten != Msg.GetLength ())
+		{
+			m_Logger.Write (FromKernel, LogError, "Write error");
+			break;
+		}
+	}
+
+	if (f_close (&File) != FR_OK)
+	{
+		m_Logger.Write (FromKernel, LogPanic, "Cannot close file");
+	}
+
+	// Reopen file, read it and display its contents
+	Result = f_open (&File, DRIVE FILENAME, FA_READ | FA_OPEN_EXISTING);
+	if (Result != FR_OK)
+	{
+		m_Logger.Write (FromKernel, LogPanic, "Cannot open file: %s", FILENAME);
+	}
+
+
+	char Buffer[100];
+	unsigned nBytesRead;
+	while ((Result = f_read (&File, Buffer, sizeof Buffer, &nBytesRead)) == FR_OK)
+	{
+		if (nBytesRead > 0)
+		{
+			m_Screen.Write (Buffer, nBytesRead);
+		}
+
+		if (nBytesRead < sizeof Buffer)         // EOF?
+		{
+			break;
+		}
+	}
+
+	if (Result != FR_OK)
+	{
+		m_Logger.Write (FromKernel, LogError, "Read error");
+	}
+
+	if (f_close (&File) != FR_OK)
+	{
+		m_Logger.Write (FromKernel, LogPanic, "Cannot close file");
+	}
+
+	// Unmount file system
+	if (f_mount (0, DRIVE, 0) != FR_OK)
+	{
+		m_Logger.Write (FromKernel, LogPanic, "Cannot unmount drive: %s", DRIVE);
+	}
+
 }
 
 TShutdownMode CKernel::Run (void)
@@ -190,22 +304,27 @@ TShutdownMode CKernel::Run (void)
 		return ShutdownHalt;
 	}
 
-	run_sdcard();
+	//run_sdcard();
 	m_keyb = new CKeyboardBuffer(pKeyboard);
+
+
+	test_sdcard(); return m_ShutdownMode;
+
+
 	main_basic();
 	return m_ShutdownMode;
-	   
+
 
 
 }
 
 /*
-void CKernel::KeyPressedHandler (const char *pString)
-{
-	assert (s_pThis != 0);
-	s_pThis->m_Screen.Write (pString, strlen (pString));
-}
-*/
+   void CKernel::KeyPressedHandler (const char *pString)
+   {
+   assert (s_pThis != 0);
+   s_pThis->m_Screen.Write (pString, strlen (pString));
+   }
+   */
 
 void CKernel::ShutdownHandler (void)
 {
@@ -214,27 +333,27 @@ void CKernel::ShutdownHandler (void)
 }
 
 /*
-void CKernel::KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned char RawKeys[6])
-{
-	assert (s_pThis != 0);
+   void CKernel::KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned char RawKeys[6])
+   {
+   assert (s_pThis != 0);
 
-	CString Message;
-	Message.Format ("Key status (modifiers %02X)", (unsigned) ucModifiers);
+   CString Message;
+   Message.Format ("Key status (modifiers %02X)", (unsigned) ucModifiers);
 
-	for (unsigned i = 0; i < 6; i++)
-	{
-		if (RawKeys[i] != 0)
-		{
-			CString KeyCode;
-			KeyCode.Format (" %02X", (unsigned) RawKeys[i]);
+   for (unsigned i = 0; i < 6; i++)
+   {
+   if (RawKeys[i] != 0)
+   {
+   CString KeyCode;
+   KeyCode.Format (" %02X", (unsigned) RawKeys[i]);
 
-			Message.Append (KeyCode);
-		}
-	}
+   Message.Append (KeyCode);
+   }
+   }
 
-	s_pThis->m_Logger.Write (FromKernel, LogNotice, Message);
-}
-*/
+   s_pThis->m_Logger.Write (FromKernel, LogNotice, Message);
+   }
+   */
 
 int putchar(int c)
 {

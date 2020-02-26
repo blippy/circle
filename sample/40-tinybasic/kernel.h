@@ -31,6 +31,8 @@
 #include <circle/timer.h>
 #include <circle/logger.h>
 #include <circle/usb/usbhcidevice.h>
+#include <SDCard/emmc.h>
+#include <fatfs/ff.h>
 #include <circle/types.h>
 #include <circle/input/keyboardbuffer.h>
 
@@ -73,13 +75,16 @@ public:
 	CTimer			m_Timer;
 	CLogger			m_Logger;
 	CUSBHCIDevice		m_USBHCI;
+	CEMMCDevice		m_EMMC;
+	FATFS			m_FileSystem;
 
 	volatile TShutdownMode m_ShutdownMode;
 
 	static CKernel *s_pThis;
 
 private:
-	TShutdownMode run_sdcard();
+	void init_sdcard();
+	void test_sdcard();
 };
 
 extern CKernel *g_kernel;
