@@ -100,7 +100,9 @@ int getchar()
 	do { 
 		n = g_kernel->m_keyb->Read(&c, 1);
 	} while (n ==0);
+#if 0
 	g_kernel->m_Screen.Write(&c, 1);
+#endif
 	return c;
 }
 
