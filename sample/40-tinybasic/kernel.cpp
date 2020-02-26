@@ -24,6 +24,42 @@
 #include <assert.h>
 //#include <circle/input/keyboardbuffer.h>
 //#include <linux/sprintf.h>
+#include <circle/usb/usbmassdevice.h>
+#include <circle/macros.h>
+
+
+
+
+struct TCHSAddress
+{
+        unsigned char Head;
+        unsigned char Sector       : 6,
+                      CylinderHigh : 2;
+        unsigned char CylinderLow;
+}
+PACKED;
+
+struct TPartitionEntry
+{
+        unsigned char   Status;
+        TCHSAddress     FirstSector;
+        unsigned char   Type;
+        TCHSAddress     LastSector;
+        unsigned        LBAFirstSector;
+        unsigned        NumberOfSectors;
+}
+PACKED;
+
+struct TMasterBootRecord
+{
+        unsigned char   BootCode[0x1BE];
+        TPartitionEntry Partition[4];
+        unsigned short  BootSignature;
+        #define BOOT_SIGNATURE          0xAA55
+}
+PACKED;
+
+
 
 static const char FromKernel[] = "kernel";
 
@@ -54,15 +90,9 @@ boolean CKernel::Initialize (void)
 {
 	boolean bOK = TRUE;
 
-	if (bOK)
-	{
-		bOK = m_Screen.Initialize ();
-	}
+	if (bOK) bOK = m_Screen.Initialize ();
 
-	if (bOK)
-	{
-		bOK = m_Serial.Initialize (115200);
-	}
+	if (bOK) bOK = m_Serial.Initialize (115200);
 
 	if (bOK)
 	{
@@ -75,20 +105,11 @@ boolean CKernel::Initialize (void)
 		bOK = m_Logger.Initialize (pTarget);
 	}
 
-	if (bOK)
-	{
-		bOK = m_Interrupt.Initialize ();
-	}
+	if (bOK) bOK = m_Interrupt.Initialize ();
 
-	if (bOK)
-	{
-		bOK = m_Timer.Initialize ();
-	}
+	if (bOK) bOK = m_Timer.Initialize ();
 
-	if (bOK)
-	{
-		bOK = m_USBHCI.Initialize ();
-	}
+	if (bOK) bOK = m_USBHCI.Initialize ();
 
 	return bOK;
 }
@@ -106,6 +127,58 @@ int getchar()
 	return c;
 }
 
+TShutdownMode CKernel::run_sdcard()
+{
+        m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
+
+        CDevice *pUMSD1 = m_DeviceNameService.GetDevice ("umsd1", TRUE);
+        if (pUMSD1 == 0)
+        {
+                m_Logger.Write (FromKernel, LogError, "USB mass storage device not found");
+
+                return ShutdownHalt;
+        }
+
+        u64 ullOffset = 0 * UMSD_BLOCK_SIZE;
+        if (pUMSD1->Seek (ullOffset) != ullOffset)
+        {
+                m_Logger.Write (FromKernel, LogError, "Seek error");
+
+                return ShutdownHalt;
+        }
+
+        TMasterBootRecord MBR;
+        if (pUMSD1->Read (&MBR, sizeof MBR) != (int) sizeof MBR)
+        {
+                m_Logger.Write (FromKernel, LogError, "Read error");
+
+                return ShutdownHalt;
+        }
+
+        if (MBR.BootSignature != BOOT_SIGNATURE)
+        {
+                m_Logger.Write (FromKernel, LogError, "Boot signature not found");
+
+                return ShutdownHalt;
+        }
+
+        m_Logger.Write (FromKernel, LogNotice, "Dumping the partition table");
+        m_Logger.Write (FromKernel, LogNotice, "# Status Type  1stSector    Sectors");
+
+        for (unsigned nPartition = 0; nPartition < 4; nPartition++)
+        {
+                m_Logger.Write (FromKernel, LogNotice, "%u %02X     %02X   %10u %10u",
+                                nPartition+1,
+                                (unsigned) MBR.Partition[nPartition].Status,
+                                (unsigned) MBR.Partition[nPartition].Type,
+                                MBR.Partition[nPartition].LBAFirstSector,
+                                MBR.Partition[nPartition].NumberOfSectors);
+        }
+
+        return ShutdownHalt;
+	
+}
+
 TShutdownMode CKernel::Run (void)
 {
 	m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
@@ -117,61 +190,13 @@ TShutdownMode CKernel::Run (void)
 		return ShutdownHalt;
 	}
 
-	//CKeyboardBuffer keyb(pKeyboard);
+	run_sdcard();
 	m_keyb = new CKeyboardBuffer(pKeyboard);
 	main_basic();
 	return m_ShutdownMode;
 	   
-	for (unsigned nCount = 0; 1; nCount++)
-        {
-		int n = 0, c;
-		do {
-			c = getchar();
-			n++;
-		}  while(c != '\n');
-		//putchar('x'); putchar('x');
-		CString msg;
-		msg.Format("Size of input: %d\n", n);
-		m_Screen.Write((const char*)msg, msg.GetLength());
-
-		/*
-                char Buffer[10];
-                int nResult = m_keyb->Read(Buffer, sizeof Buffer);
-                if (nResult > 0)
-                {
-			m_Screen.Write("\nYou wrote:", 11);
-                        m_Screen.Write (Buffer, nResult);
-                }
-
-                //m_Screen.Rotor (0, nCount);
-		*/
-        }
 
 
-	return m_ShutdownMode;
-
-	/*
-#if 1	// set to 0 to test raw mode
-	pKeyboard->RegisterShutdownHandler (ShutdownHandler);
-	pKeyboard->RegisterKeyPressedHandler (KeyPressedHandler);
-#else
-	pKeyboard->RegisterKeyStatusHandlerRaw (KeyStatusHandlerRaw);
-#endif
-
-	m_Logger.Write (FromKernel, LogNotice, "Just type something!");
-
-	for (unsigned nCount = 0; m_ShutdownMode == ShutdownNone; nCount++)
-	{
-		// CUSBKeyboardDevice::UpdateLEDs() must not be called in interrupt context,
-		// that's why this must be done here. This does nothing in raw mode.
-		pKeyboard->UpdateLEDs ();
-
-		m_Screen.Rotor (0, nCount);
-		m_Timer.MsDelay (100);
-	}
-
-	return m_ShutdownMode;
-	*/
 }
 
 /*

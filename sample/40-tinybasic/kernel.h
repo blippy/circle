@@ -77,6 +77,9 @@ public:
 	volatile TShutdownMode m_ShutdownMode;
 
 	static CKernel *s_pThis;
+
+private:
+	TShutdownMode run_sdcard();
 };
 
 extern CKernel *g_kernel;

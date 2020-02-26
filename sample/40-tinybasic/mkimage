@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+function print_help {
+cat <<EOF
+Make a filesystem for use under QEMU
+etc
+EOF
+}
+ 
+
+case $1 in
+    h) print_help ; exit ;;
+esac
+
+source basic.env
+
+#fallocate -l 100K $PART
+#mkfs.fat -F 12 $PART
+fallocate -l 34M $PART
+mkfs.fat -F 32 $PART
+

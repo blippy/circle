@@ -12,9 +12,19 @@ case $1 in
     h) print_help ; exit ;;
 esac
 
+source basic.env
+
 
 EXE=/home/pi/Documents/qemu/builds/arm-softmmu/qemu-system-arm
 IMG=~/repos/circle/sample/08*/kernel7.img
 IMG=kernel7.img
 ls $IMG
-$EXE -M raspi2 -bios  $IMG  -usbdevice keyboard
+
+if [ -f "$PART" ]; then
+	echo "Using partition $PART"
+	DRIVE="-drive file=$PART,if=sd,format=raw"
+fi
+
+CMD="$EXE -M raspi2 -bios  $IMG  -usbdevice keyboard $DRIVE"
+echo "Running command: $CMD"
+$CMD

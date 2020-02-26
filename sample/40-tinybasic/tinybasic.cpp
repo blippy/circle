@@ -110,7 +110,10 @@ void puts(char* str)
 // This enables LOAD, SAVE, FILES commands through the Arduino SD Library
 // it adds 9k of usage as well.
 //#define ENABLE_FILEIO 1
-//#undef ENABLE_FILEIO
+#ifdef ENABLE_FILEIO
+#pragma message "File IO enabled"
+#endif
+#undef ENABLE_FILEIO
 
 // this turns on "autorun".  if there's FileIO, and a file "autorun.bas",
 // then it will load it and run it when starting up
