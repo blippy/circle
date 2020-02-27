@@ -3,8 +3,11 @@
 function print_help {
 cat <<EOF
 Mount/unmount a disk partition for QEMU use
-Description here
-etc
+
+By itself it mounts the disk image
+
+-h	print this help message and exit
+-u	unmount disk image
 EOF
 }
  
