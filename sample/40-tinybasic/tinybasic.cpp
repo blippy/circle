@@ -399,15 +399,6 @@ const static unsigned char keywords[] PROGMEM = {
 	'T','O','N','E'+0x80,
 	'N','O','T','O','N','E'+0x80,
 #endif
-#ifdef ARDUINO
-#ifdef ENABLE_EEPROM
-	'E','C','H','A','I','N'+0x80,
-	'E','L','I','S','T'+0x80,
-	'E','L','O','A','D'+0x80,
-	'E','F','O','R','M','A','T'+0x80,
-	'E','S','A','V','E'+0x80,
-#endif
-#endif
 	0
 };
 
@@ -434,11 +425,6 @@ enum {
 	KW_CHAIN,
 #ifdef ENABLE_TONES
 	KW_TONEW, KW_TONE, KW_NOTONE,
-#endif
-#ifdef ARDUINO
-#ifdef ENABLE_EEPROM
-	KW_ECHAIN, KW_ELIST, KW_ELOAD, KW_EFORMAT, KW_ESAVE, 
-#endif
 #endif
 	KW_DEFAULT /* always the final one*/
 };
@@ -1446,74 +1432,6 @@ execline:
 	txtpos = current_line+sizeof(LINENUM)+sizeof(char);
 	goto interperateAtTxtpos;
 
-#ifdef ARDUINO
-#undef ENABLE_EEPROM
-#ifdef ENABLE_EEPROM
-elist:
-	{
-		int i;
-		for( i = 0 ; i < (E2END +1) ; i++ )
-		{
-			val = EEPROM.read( i );
-
-			if( val == '\0' ) {
-				goto execnextline;
-			}
-
-			if( ((val < ' ') || (val  > '~')) && (val != NL) && (val != CR))  {
-				outchar( '?' );
-			} 
-			else {
-				outchar( val );
-			}
-		}
-	}
-	goto execnextline;
-
-eformat:
-	{
-		for( int i = 0 ; i < E2END ; i++ )
-		{
-			if( (i & 0x03f) == 0x20 ) outchar( '.' );
-			EEPROM.write( i, 0 );
-		}
-		outchar( LF );
-	}
-	goto execnextline;
-
-esave:
-	{
-		outStream = kStreamEEProm;
-		eepos = 0;
-
-		// copied from "List"
-		list_line = findline();
-		while(list_line != program_end) {
-			printline();
-		}
-		outchar('\0');
-
-		// go back to standard output, close the file
-		outStream = kStreamSerial;
-
-		goto warmstart;
-	}
-
-
-echain:
-	runAfterLoad = true;
-
-eload:
-	// clear the program
-	program_end = program_start;
-
-	// load from a file into memory
-	eepos = 0;
-	inStream = kStreamEEProm;
-	inhibitOutput = true;
-	goto warmstart;
-#endif /* ENABLE_EEPROM */
-#endif
 
 input:
 	{
