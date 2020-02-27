@@ -53,19 +53,12 @@
 //    down the whole thing so we can get back to implementing
 //    features instead of licenses.  Thank you for your time.
 
-//#include "config.h"
-
-#define kVersion "v0.15"
+#define kVersion "v0.16"
 #include "kernel.h"
 
-//extern CKernel* g_kernel = 0;
-
-// IF testing with Visual C, this needs to be the first thing in the file.
-//#include "stdafx.h"
 
 char eliminateCompileErrors = 1;  // fix to suppress arduino build errors
 
-//#include "bas_config.h"
 
 #define FORCE_DESKTOP
 //#define ALLOW_SDCARD
@@ -85,19 +78,8 @@ char eliminateCompileErrors = 1;  // fix to suppress arduino build errors
 #endif       
 #endif
 
-//#undef ENABLE_SDCARD
 
-/*
-#include <circle/string.h>
-void putchar(char c)
-{
-g_kernel->putchar(c);
-}
-*/
-
-
-
-void puts(char* str)
+void puts(const char* str)
 {
 	while(*str) 
 		putchar(*str++);
@@ -109,7 +91,7 @@ void puts(char* str)
 
 // This enables LOAD, SAVE, FILES commands through the Arduino SD Library
 // it adds 9k of usage as well.
-//#define ENABLE_FILEIO 1
+#define ENABLE_FILEIO 1
 #ifdef ENABLE_FILEIO
 #pragma message "File IO enabled"
 #endif
@@ -285,10 +267,10 @@ typedef unsigned char byte;
 
 ////////////////////
 
+void cmd_Files();
+unsigned char * filenameWord(void);
 #ifdef ENABLE_FILEIO
 // functions defined elsehwere
-void cmd_Files( void );
-unsigned char * filenameWord(void);
 static boolean sd_is_initialized = false;
 #endif
 
@@ -359,6 +341,7 @@ const static unsigned char keywords[] PROGMEM = {
 	'S','T','O','P'+0x80,
 	'B','Y','E'+0x80,
 	'F','I','L','E','S'+0x80,
+	'T','Y','P','E'+0x80,
 	'M','E','M'+0x80,
 	'?'+ 0x80,
 	'\''+ 0x80,
@@ -398,6 +381,7 @@ enum {
 	KW_POKE,
 	KW_STOP, KW_BYE,
 	KW_FILES,
+	KW_TYPE,
 	KW_MEM,
 	KW_QMARK, KW_QUOTE,
 	KW_AWRITE, KW_DWRITE,
@@ -1255,6 +1239,8 @@ interperateAtTxtpos:
 
 		case KW_FILES:
 			goto files;
+		case KW_TYPE:
+			goto type;
 		case KW_LIST:
 			goto list;
 		case KW_CHAIN:
@@ -1826,14 +1812,17 @@ files:
 	// display a listing of files on the device.
 	// version 1: no support for subdirectories
 
-#ifdef ENABLE_FILEIO
-#pragma message "cmd_Files() enabled"
+//#ifdef ENABLE_FILEIO
+//#pragma message "cmd_Files() enabled"
 	cmd_Files();
 	goto warmstart;
-#else
-	goto unimplemented;
-#endif // ENABLE_FILEIO
+//#else
+//	goto unimplemented;
+//#endif // ENABLE_FILEIO
 
+type:
+	g_kernel->cmd_type(filenameWord());
+	goto warmstart;
 
 chain:
 	runAfterLoad = true;
@@ -2073,7 +2062,6 @@ void setup()
 #endif /* ENABLE_EAUTORUN */
 #endif /* ENABLE_EEPROM */
 
-	//cmd_Files();
 #endif /* ARDUINO */
 }
 
@@ -2219,42 +2207,15 @@ static int initSD( void )
 }
 #endif
 
-#if ENABLE_FILEIO
-void cmd_Files( void )
+void cmd_Files()
 {
-	Serial.println("FILES called");
-	File dir = SD.open( "/" );
-	dir.seek(0);
-
-	while( true ) {
-		File entry = dir.openNextFile();
-		if( !entry ) {
-			entry.close();
-			break;
-		}
-
-		Serial.println(entry.name());
-		entry.close();
-	}
-	dir.close();
+	g_kernel->test_sdcard();
 }
-#endif
 
-/*
-   void loop1()
-   {
 
-   }
-   */
-
-//int main( int argc, char ** argv )
-//void main_basic(CKernel* kernel)
 void main_basic()
 {
 	puts("Starting up TinyBasic Plus\n");
-	//g_kernel = kernel;
-	//return;
-
 	setup();
 	loop();
 }

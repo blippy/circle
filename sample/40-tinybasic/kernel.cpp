@@ -193,6 +193,61 @@ void CKernel::init_sdcard()
 
 }
 
+void CKernel::cmd_type(unsigned char* filename)
+{
+	// Mount file system
+	if (f_mount (&m_FileSystem, DRIVE, 1) != FR_OK)
+	{
+		m_Logger.Write (FromKernel, LogPanic, "Cannot mount drive: %s", DRIVE);
+	}
+
+
+	FIL File;
+	FRESULT Result;
+	CString full = CString(DRIVE);
+	full.Append("/");
+	full.Append((char*)filename);
+	// Reopen file, read it and display its contents
+	Result = f_open (&File, (const char*) full, FA_READ | FA_OPEN_EXISTING);
+	if (Result != FR_OK)
+	{
+		m_Logger.Write (FromKernel, LogError, "Cannot open file: %s", (const char*) full);
+		return;
+	}
+
+
+	char Buffer[100];
+	unsigned nBytesRead;
+	while ((Result = f_read (&File, Buffer, sizeof Buffer, &nBytesRead)) == FR_OK)
+	{
+		if (nBytesRead > 0)
+		{
+			m_Screen.Write (Buffer, nBytesRead);
+		}
+
+		if (nBytesRead < sizeof Buffer)         // EOF?
+		{
+			break;
+		}
+	}
+
+	if (Result != FR_OK)
+	{
+		m_Logger.Write (FromKernel, LogError, "Read error");
+	}
+
+	if (f_close (&File) != FR_OK)
+	{
+		m_Logger.Write (FromKernel, LogPanic, "Cannot close file");
+	}
+
+	// Unmount file system
+	if (f_mount (0, DRIVE, 0) != FR_OK)
+	{
+		m_Logger.Write (FromKernel, LogPanic, "Cannot unmount drive: %s", DRIVE);
+	}
+
+}
 void CKernel::test_sdcard()
 {
 	// Mount file system
@@ -308,7 +363,7 @@ TShutdownMode CKernel::Run (void)
 	m_keyb = new CKeyboardBuffer(pKeyboard);
 
 
-	test_sdcard(); return m_ShutdownMode;
+	//test_sdcard(); return m_ShutdownMode;
 
 
 	main_basic();

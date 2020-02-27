@@ -84,7 +84,9 @@ public:
 
 private:
 	void init_sdcard();
+public:
 	void test_sdcard();
+	void cmd_type(unsigned char* filename);
 };
 
 extern CKernel *g_kernel;
