@@ -53,6 +53,9 @@
 //    down the whole thing so we can get back to implementing
 //    features instead of licenses.  Thank you for your time.
 
+
+#include <fatfs/ff.h>
+
 #define kVersion "v0.16"
 #include "kernel.h"
 
@@ -78,6 +81,29 @@ char eliminateCompileErrors = 1;  // fix to suppress arduino build errors
 #endif       
 #endif
 
+typedef unsigned char uchar;
+
+uchar* filenameWord(void);
+void puts(const char* str);
+
+class CMount
+{
+	public:
+		CMount();
+		~CMount();
+};
+
+CMount::CMount()
+{
+	f_mount(&g_kernel->m_FileSystem, "SD", 1);
+}
+
+CMount::~CMount()
+{
+	puts("CMount: unmounting");
+	//f_mount(&g_kernel->m_FileSystem, "SD", 0);
+	f_mount(0, "SD", 0);
+}
 
 void puts(const char* str)
 {
@@ -86,15 +112,33 @@ void puts(const char* str)
 	//putchar('\r');
 	putchar('\n');
 }
+
+CString full_filename()
+{
+	CString full = CString("SD:/");
+	//filename = filenameWord();
+	full.Append((const char*) filenameWord());
+	return full;
+}
+
+bool f_exists(const char* path)
+{
+	FIL file;
+	if (f_open(&file, path, FA_READ))
+	{
+		f_close(&file);
+		return 1;
+	}
+	return 0;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Feature option configuration...
 
 // This enables LOAD, SAVE, FILES commands through the Arduino SD Library
 // it adds 9k of usage as well.
 #define ENABLE_FILEIO 1
-#ifdef ENABLE_FILEIO
-#pragma message "File IO enabled"
-#endif
 #undef ENABLE_FILEIO
 
 // this turns on "autorun".  if there's FileIO, and a file "autorun.bas",
@@ -268,7 +312,6 @@ typedef unsigned char byte;
 ////////////////////
 
 void cmd_Files();
-unsigned char * filenameWord(void);
 #ifdef ENABLE_FILEIO
 // functions defined elsehwere
 static boolean sd_is_initialized = false;
@@ -759,6 +802,49 @@ static void toUppercaseBuffer(void)
 }
 
 /***************************************************************************/
+void f_print(FIL* fp, CString& str)
+{
+	unsigned n;
+	f_write(fp, (const char*) str, str.GetLength(), &n);
+}
+
+void f_putc1(FIL *fp, char c)
+{
+	unsigned n;
+        f_write(fp, (const char*) &c, 1, &n);
+}
+
+void printline(FIL* file)
+{
+	LINENUM line_num;
+
+	line_num = *((LINENUM *)(list_line));
+	list_line += sizeof(LINENUM) + sizeof(char);
+
+	//f_puts("hello", file);
+	CString str;
+	str.Format("%d ", line_num);
+	f_print(file, str);
+
+	//f_printf1(file, "%d ", line_num);
+	//printnum(line_num);
+	//outchar(' ');
+	while(*list_line != NL)
+	{
+		//outchar(*list_line);
+		f_putc1(file, *list_line);
+		list_line++;
+	}
+	list_line++;
+#ifdef ALIGN_MEMORY
+	// Start looking for next line on even page
+	if (ALIGN_UP(list_line) != list_line)
+		list_line++;
+#endif
+	//line_terminator()
+	f_putc1(file, '\n');
+}
+
 void printline()
 {
 	LINENUM line_num;
@@ -1812,13 +1898,13 @@ files:
 	// display a listing of files on the device.
 	// version 1: no support for subdirectories
 
-//#ifdef ENABLE_FILEIO
-//#pragma message "cmd_Files() enabled"
+	//#ifdef ENABLE_FILEIO
+	//#pragma message "cmd_Files() enabled"
 	cmd_Files();
 	goto warmstart;
-//#else
-//	goto unimplemented;
-//#endif // ENABLE_FILEIO
+	//#else
+	//	goto unimplemented;
+	//#endif // ENABLE_FILEIO
 
 type:
 	g_kernel->cmd_type(filenameWord());
@@ -1869,43 +1955,39 @@ load:
 
 save:
 	// save from memory out to a file
-#ifdef ENABLE_FILEIO
 	{
+		CMount mnt;
 		unsigned char *filename;
 
 		// Work out the filename
 		expression_error = 0;
-		filename = filenameWord();
+		//filename = filenameWord();
+		CString fname(full_filename());
+		const char *full = (const char*) fname;
+
 		if(expression_error)
 			goto qwhat;
 
-#ifdef ARDUINO
 		// remove the old file if it exists
-		if( SD.exists( (char *)filename )) {
-			SD.remove( (char *)filename );
-		}
+		if(f_exists(full)) f_unlink(full);
 
 		// open the file, switch over to file output
-		fp = SD.open( (const char *)filename, FILE_WRITE );
+		FIL file;
+		f_open(&file, (const char *)full, FA_WRITE | FA_CREATE_ALWAYS); // TODO test result
 		outStream = kStreamFile;
 
 		// copied from "List"
 		list_line = findline();
 		while(list_line != program_end)
-			printline();
+			printline(&file);
 
 		// go back to standard output, close the file
 		outStream = kStreamSerial;
 
-		fp.close();
-#else // ARDUINO
-		// desktop
-#endif // ARDUINO
+		f_close(&file);
+		puts("save file closed");
 		goto warmstart;
 	}
-#else // ENABLE_FILEIO
-	goto unimplemented;
-#endif // ENABLE_FILEIO
 
 rseed:
 	{

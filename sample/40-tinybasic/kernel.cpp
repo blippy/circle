@@ -29,40 +29,7 @@
 
 
 #define DRIVE           "SD:"
-//#define DRIVE         "USB:"
 #define FILENAME        "/circle.txt"
-
-
-/*
-   struct TCHSAddress
-   {
-   unsigned char Head;
-   unsigned char Sector       : 6,
-CylinderHigh : 2;
-unsigned char CylinderLow;
-}
-PACKED;
-
-struct TPartitionEntry
-{
-unsigned char   Status;
-TCHSAddress     FirstSector;
-unsigned char   Type;
-TCHSAddress     LastSector;
-unsigned        LBAFirstSector;
-unsigned        NumberOfSectors;
-}
-PACKED;
-
-struct TMasterBootRecord
-{
-unsigned char   BootCode[0x1BE];
-TPartitionEntry Partition[4];
-unsigned short  BootSignature;
-#define BOOT_SIGNATURE          0xAA55
-}
-PACKED;
-*/
 
 
 static const char FromKernel[] = "kernel";
@@ -140,57 +107,6 @@ void CKernel::init_sdcard()
 		m_Logger.Write (FromKernel, LogNotice, "SD card initialised");
 	else
 		m_Logger.Write (FromKernel, LogError, "SD card initialisation FAILED");
-
-	/*
-	   m_Logger.Write (FromKernel, LogNotice, "Compile time: " __DATE__ " " __TIME__);
-
-	   CDevice *pUMSD1 = m_DeviceNameService.GetDevice ("umsd1", TRUE);
-	   if (pUMSD1 == 0)
-	   {
-	   m_Logger.Write (FromKernel, LogError, "USB mass storage device not found");
-
-	   return ShutdownHalt;
-	   }
-
-	   u64 ullOffset = 0 * UMSD_BLOCK_SIZE;
-	   if (pUMSD1->Seek (ullOffset) != ullOffset)
-	   {
-	   m_Logger.Write (FromKernel, LogError, "Seek error");
-
-	   return ShutdownHalt;
-	   }
-
-	   TMasterBootRecord MBR;
-	   if (pUMSD1->Read (&MBR, sizeof MBR) != (int) sizeof MBR)
-	   {
-	   m_Logger.Write (FromKernel, LogError, "Read error");
-
-	   return ShutdownHalt;
-	   }
-
-	   if (MBR.BootSignature != BOOT_SIGNATURE)
-	   {
-	   m_Logger.Write (FromKernel, LogError, "Boot signature not found");
-
-	   return ShutdownHalt;
-	   }
-
-	   m_Logger.Write (FromKernel, LogNotice, "Dumping the partition table");
-	   m_Logger.Write (FromKernel, LogNotice, "# Status Type  1stSector    Sectors");
-
-	   for (unsigned nPartition = 0; nPartition < 4; nPartition++)
-	   {
-	   m_Logger.Write (FromKernel, LogNotice, "%u %02X     %02X   %10u %10u",
-	   nPartition+1,
-	   (unsigned) MBR.Partition[nPartition].Status,
-	   (unsigned) MBR.Partition[nPartition].Type,
-	   MBR.Partition[nPartition].LBAFirstSector,
-	   MBR.Partition[nPartition].NumberOfSectors);
-	   }
-
-	   return ShutdownHalt;
-	   */
-
 }
 
 void CKernel::cmd_type(unsigned char* filename)
@@ -198,7 +114,8 @@ void CKernel::cmd_type(unsigned char* filename)
 	// Mount file system
 	if (f_mount (&m_FileSystem, DRIVE, 1) != FR_OK)
 	{
-		m_Logger.Write (FromKernel, LogPanic, "Cannot mount drive: %s", DRIVE);
+		m_Logger.Write (FromKernel, LogError, "Cannot mount drive: %s", DRIVE);
+		return;
 	}
 
 
@@ -373,13 +290,6 @@ TShutdownMode CKernel::Run (void)
 
 }
 
-/*
-   void CKernel::KeyPressedHandler (const char *pString)
-   {
-   assert (s_pThis != 0);
-   s_pThis->m_Screen.Write (pString, strlen (pString));
-   }
-   */
 
 void CKernel::ShutdownHandler (void)
 {
@@ -387,28 +297,6 @@ void CKernel::ShutdownHandler (void)
 	s_pThis->m_ShutdownMode = ShutdownReboot;
 }
 
-/*
-   void CKernel::KeyStatusHandlerRaw (unsigned char ucModifiers, const unsigned char RawKeys[6])
-   {
-   assert (s_pThis != 0);
-
-   CString Message;
-   Message.Format ("Key status (modifiers %02X)", (unsigned) ucModifiers);
-
-   for (unsigned i = 0; i < 6; i++)
-   {
-   if (RawKeys[i] != 0)
-   {
-   CString KeyCode;
-   KeyCode.Format (" %02X", (unsigned) RawKeys[i]);
-
-   Message.Append (KeyCode);
-   }
-   }
-
-   s_pThis->m_Logger.Write (FromKernel, LogNotice, Message);
-   }
-   */
 
 int putchar(int c)
 {
