@@ -1399,21 +1399,6 @@ interperateAtTxtpos:
 			goto tonestop;
 #endif
 
-#ifdef ARDUINO
-#undef ENABLE_EEPROM
-#ifdef ENABLE_EEPROM
-		case KW_EFORMAT:
-			goto eformat;
-		case KW_ESAVE:
-			goto esave;
-		case KW_ELOAD:
-			goto eload;
-		case KW_ELIST:
-			goto elist;
-		case KW_ECHAIN:
-			goto echain;
-#endif
-#endif
 
 		case KW_DEFAULT:
 			goto assignment;
