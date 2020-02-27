@@ -1633,15 +1633,15 @@ assignment:
 	goto run_next_statement;
 poke:
 	{
-		short int value;
-		unsigned char *address;
+		//short int value;
+		//unsigned char *address;
 
 		// Work out where to put it
 		expression_error = 0;
-		value = expression();
+		//value = expression();
 		if(expression_error)
 			goto qwhat;
-		address = (unsigned char *)value;
+		//address = (unsigned char *)value;
 
 		// check for a comma
 		ignore_blanks();
@@ -1652,7 +1652,7 @@ poke:
 
 		// Now get the value to assign
 		expression_error = 0;
-		value = expression();
+		//value = expression();
 		if(expression_error)
 			goto qwhat;
 		//printf("Poke %p value %i\n",address, (unsigned char)value);
@@ -1875,7 +1875,7 @@ save:
 	// save from memory out to a file
 	{
 		CMount mnt;
-		unsigned char *filename;
+		//unsigned char *filename;
 
 		// Work out the filename
 		expression_error = 0;
