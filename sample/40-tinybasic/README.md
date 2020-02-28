@@ -1,13 +1,21 @@
-README
+# TinyBASIC Plus
 
-MMU and frame buffer are on by default now. First blink 5 times to show the image was loaded right. Write character set to screen. Write some logging messages to screen or UART. debug_hexdump() of the starting bytes of the ATAG structure at 0x100. Show usage of assert() and stack-trace.
+sudo apt install gcc-arm-none-eabi
 
-You can create a file cmdline.txt like this on the SD(HC) card to change the frame buffer size:
 
-width=640 height=480
+cd /home/pi/Documents/qemu/builds/arm-softmmu
+./qemu-system-arm -M raspi2 -bios  ~/pi3/Documents/circle/sample/08-usbkeyboard/kernel7.img -usbdevice keyboard
 
-In the same file you can control the logging feature by these options (append them to the same line):
 
-logdev=ttyS1 loglevel=4
 
-(write logging messages to UART now, default is to screen ("tty1"), the loglevel controls the amount of messages produced (0: only panic, 1: also errors, 2: also warnings, 3: also notices, 4: also debug output (default))
+Config.mk:
+# For QEMU
+# https://www.raspberrypi.org/forums/viewtopic.php?f=72&t=90130&start=250
+DEFINE += -DNO_PHYSICAL_COUNTER -DUSE_QEMU_USB_FIX
+RASPPI=2
+
+# As at 24-Feb-2020
+# See include/circle/sysconfig.h
+# Choices are DE (default), ES, FR, IT, UK, US 
+#define DEFAULT_KEYMAP		"UK"
+DEFINE += -DDEFAULT_KEYMAP=\"UK\"
