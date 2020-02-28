@@ -101,22 +101,9 @@ int getchar()
 	return c;
 }
 
-void CKernel::init_sdcard()
-{
-	if(m_EMMC.Initialize())
-		m_Logger.Write (FromKernel, LogNotice, "SD card initialised");
-	else
-		m_Logger.Write (FromKernel, LogError, "SD card initialisation FAILED");
-}
 
 void CKernel::cmd_type(unsigned char* filename)
 {
-	// Mount file system
-	if (f_mount (&m_FileSystem, DRIVE, 1) != FR_OK)
-	{
-		m_Logger.Write (FromKernel, LogError, "Cannot mount drive: %s", DRIVE);
-		return;
-	}
 
 
 	FIL File;
@@ -158,21 +145,10 @@ void CKernel::cmd_type(unsigned char* filename)
 		m_Logger.Write (FromKernel, LogPanic, "Cannot close file");
 	}
 
-	// Unmount file system
-	if (f_mount (0, DRIVE, 0) != FR_OK)
-	{
-		m_Logger.Write (FromKernel, LogPanic, "Cannot unmount drive: %s", DRIVE);
-	}
 
 }
 void CKernel::test_sdcard()
 {
-	// Mount file system
-	if (f_mount (&m_FileSystem, DRIVE, 1) != FR_OK)
-	{
-		m_Logger.Write (FromKernel, LogPanic, "Cannot mount drive: %s", DRIVE);
-	}
-
 	// Show contents of root directory
 	DIR Directory;
 	FILINFO FileInfo;
@@ -257,12 +233,25 @@ void CKernel::test_sdcard()
 		m_Logger.Write (FromKernel, LogPanic, "Cannot close file");
 	}
 
-	// Unmount file system
-	if (f_mount (0, DRIVE, 0) != FR_OK)
-	{
-		m_Logger.Write (FromKernel, LogPanic, "Cannot unmount drive: %s", DRIVE);
-	}
 
+}
+
+	
+void CKernel::init_sdcard()
+{
+	if(m_EMMC.Initialize())
+		m_Logger.Write (FromKernel, LogNotice, "SD card initialised");
+	else
+		m_Logger.Write (FromKernel, LogError, "SD card initialisation FAILED");
+
+	if(FR_OK == f_mount (&m_FileSystem, DRIVE, 1)) 
+		m_Logger.Write(FromKernel, LogNotice, "Mounted drive: %s", DRIVE);
+	else
+		m_Logger.Write (FromKernel, LogError, "Cannot mount drive: %s", DRIVE);
+
+	/* You typically unmount it by calling:
+	 * f_mount (0, DRIVE, 0);
+	 */
 }
 
 TShutdownMode CKernel::Run (void)
@@ -276,7 +265,7 @@ TShutdownMode CKernel::Run (void)
 		return ShutdownHalt;
 	}
 
-	//run_sdcard();
+	//init_sdcard();
 	m_keyb = new CKeyboardBuffer(pKeyboard);
 
 

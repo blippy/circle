@@ -86,6 +86,7 @@ typedef unsigned char uchar;
 uchar* filenameWord(void);
 void puts(const char* str);
 
+/*
 class CMount
 {
 	public:
@@ -101,9 +102,9 @@ CMount::CMount()
 CMount::~CMount()
 {
 	puts("CMount: unmounting");
-	//f_mount(&g_kernel->m_FileSystem, "SD", 0);
 	f_mount(0, "SD", 0);
 }
+*/
 
 void puts(const char* str)
 {
@@ -124,12 +125,11 @@ CString full_filename()
 bool f_exists(const char* path)
 {
 	FIL file;
-	if (f_open(&file, path, FA_READ))
-	{
-		f_close(&file);
-		return 1;
-	}
-	return 0;
+	FRESULT res = f_open(&file, path, FA_READ  | FA_OPEN_EXISTING);
+	if(res != FR_OK) return 0;
+
+	f_close(&file);
+	return 1;
 }
 
 
@@ -1821,45 +1821,40 @@ load:
 	program_end = program_start;
 
 	// load from a file into memory
-#ifdef ENABLE_FILEIO
 	{
-		unsigned char *filename;
-
 		// Work out the filename
 		expression_error = 0;
-		filename = filenameWord();
+		CString full1(full_filename());
+		const char* full = (const char*) full1;
 		if(expression_error)
 			goto qwhat;
 
-#ifdef ARDUINO
+		//CMount mnt;
 		// Arduino specific
-		if( !SD.exists( (char *)filename ))
+		puts("About to load");
+		puts(full);
+		if(!f_exists(full))
 		{
+			puts("no exists");
 			printmsg( sdfilemsg );
 		} 
 		else {
+			puts("does exist");
 
-			fp = SD.open( (const char *)filename );
+			//fp = SD.open( (const char *)filename );
 			inStream = kStreamFile;
 			inhibitOutput = true;
 		}
-#else // ARDUINO
-		// Desktop specific
-#endif // ARDUINO
-		// this will kickstart a series of events to read in from the file.
 
 	}
 	goto warmstart;
-#else // ENABLE_FILEIO
-	goto unimplemented;
-#endif // ENABLE_FILEIO
 
 
 
 save:
 	// save from memory out to a file
 	{
-		CMount mnt;
+		//CMount mnt;
 		//unsigned char *filename;
 
 		// Work out the filename
