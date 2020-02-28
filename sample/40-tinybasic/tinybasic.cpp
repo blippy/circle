@@ -85,26 +85,27 @@ typedef unsigned char uchar;
 
 uchar* filenameWord(void);
 void puts(const char* str);
+FIL fp;
 
 /*
-class CMount
-{
-	public:
-		CMount();
-		~CMount();
-};
+   class CMount
+   {
+   public:
+   CMount();
+   ~CMount();
+   };
 
-CMount::CMount()
-{
-	f_mount(&g_kernel->m_FileSystem, "SD", 1);
-}
+   CMount::CMount()
+   {
+   f_mount(&g_kernel->m_FileSystem, "SD", 1);
+   }
 
-CMount::~CMount()
-{
-	puts("CMount: unmounting");
-	f_mount(0, "SD", 0);
-}
-*/
+   CMount::~CMount()
+   {
+   puts("CMount: unmounting");
+   f_mount(0, "SD", 0);
+   }
+   */
 
 void puts(const char* str)
 {
@@ -212,11 +213,6 @@ bool f_exists(const char* path)
 // includes, and settings for Arduino-specific features
 #ifdef ARDUINO
 
-// EEPROM
-#ifdef ENABLE_EEPROM
-#include <EEPROM.h>  /* NOTE: case sensitive */
-int eepos = 0;
-#endif
 
 // SD card File io
 #ifdef ENABLE_FILEIO
@@ -227,7 +223,6 @@ int eepos = 0;
 #define kSD_Fail  0
 #define kSD_OK    1
 
-File fp;
 #endif
 
 // set up our RAM buffer size for program and user input
@@ -269,9 +264,6 @@ File fp;
 // size of our program ram
 #define kRamSize   64*1024 /* arbitrary - not dependant on libraries */
 
-#ifdef ENABLE_FILEIO
-FILE * fp;
-#endif
 #endif
 
 ////////////////////
@@ -797,7 +789,7 @@ void f_print(FIL* fp, CString& str)
 void f_putc1(FIL *fp, char c)
 {
 	unsigned n;
-        f_write(fp, (const char*) &c, 1, &n);
+	f_write(fp, (const char*) &c, 1, &n);
 }
 
 void printline(FIL* file)
@@ -1831,19 +1823,22 @@ load:
 
 		//CMount mnt;
 		// Arduino specific
-		puts("About to load");
-		puts(full);
+		//puts("About to load");
+		//puts(full);
 		if(!f_exists(full))
 		{
-			puts("no exists");
+			//puts("no exists");
 			printmsg( sdfilemsg );
 		} 
 		else {
-			puts("does exist");
+			//puts("does exist");
 
 			//fp = SD.open( (const char *)filename );
+			FRESULT res = f_open(&fp, full,  FA_READ  | FA_OPEN_EXISTING);
+			if(res != FR_OK) puts("Error opening file for reading");
 			inStream = kStreamFile;
 			inhibitOutput = true;
+			//putchar(inchar());
 		}
 
 	}
@@ -2066,20 +2061,22 @@ static unsigned char breakcheck(void)
 static int inchar()
 {
 	int v;
-#ifdef ARDUINO
 
 	switch( inStream ) {
-		case( kStreamFile ):
-#ifdef ENABLE_FILEIO
-			v = fp.read();
-			if( v == NL ) v=CR; // file translate
-			if( !fp.available() ) {
-				fp.close();
+		case( kStreamFile ): 
+			{
+				//puts("reading from file");
+				//putchar('.');
+				UINT n;
+				char c;
+				FRESULT res = f_read(&fp, &c, 1, &n);
+				//putchar(c);
+				//if(res != FR_OK) putchar('X');
+				if( c == NL ) c=CR; // file translate
+				if(n!=0) return c;
+				f_close(&fp);
 				goto inchar_loadfinish;
 			}
-			return v;    
-#else
-#endif
 			break;
 		case( kStreamEEProm ):
 #ifdef ENABLE_EEPROM
@@ -2097,11 +2094,13 @@ static int inchar()
 			break;
 		case( kStreamSerial ):
 		default:
-			while(1)
-			{
-				if(Serial.available())
-					return Serial.read();
-			}
+			// otherwise. desktop!
+			int got = getchar();
+
+			// translation for desktop systems
+			if( got == LF ) got = CR;
+
+			return got;
 	}
 
 inchar_loadfinish:
@@ -2114,15 +2113,6 @@ inchar_loadfinish:
 	}
 	return NL; // trigger a prompt.
 
-#else
-	// otherwise. desktop!
-	int got = getchar();
-
-	// translation for desktop systems
-	if( got == LF ) got = CR;
-
-	return got;
-#endif
 }
 
 /***********************************************************/
