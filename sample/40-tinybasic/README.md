@@ -10,18 +10,19 @@ cd /home/pi/Documents/qemu/builds/arm-softmmu
 
 Config.mk:
 ```
-\# For QEMU
-\# https://www.raspberrypi.org/forums/viewtopic.php?f=72&t=90130&start=250
+# For QEMU
+# https://www.raspberrypi.org/forums/viewtopic.php?f=72&t=90130&start=250
 DEFINE += -DNO_PHYSICAL_COUNTER -DUSE_QEMU_USB_FIX
 RASPPI=2
 
-\# As at 24-Feb-2020
-\# See include/circle/sysconfig.h
-\# Choices are DE (default), ES, FR, IT, UK, US 
-\#define DEFAULT_KEYMAP		"UK"
+# As at 24-Feb-2020
+# See include/circle/sysconfig.h
+# Choices are DE (default), ES, FR, IT, UK, US 
+#define DEFAULT_KEYMAP		"UK"
 DEFINE += -DDEFAULT_KEYMAP=\"UK\"
 ```
 
 ## Links to other sites
 
+* [Circle - C++ bare metal environment (with USB)](https://www.raspberrypi.org/forums/viewtopic.php?f=72&t=90130&start=250)
 
