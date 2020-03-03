@@ -24,5 +24,6 @@ DEFINE += -DDEFAULT_KEYMAP=\"UK\"
 
 ## Links to other sites
 
+* [CircleOS + BASIC](https://www.raspberrypi.org/forums/viewtopic.php?f=72&t=266203&p=1617466#p1617466)
 * [Circle - C++ bare metal environment (with USB)](https://www.raspberrypi.org/forums/viewtopic.php?f=72&t=90130&start=250)
 
