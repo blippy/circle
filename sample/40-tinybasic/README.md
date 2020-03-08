@@ -1,5 +1,10 @@
 # TinyBASIC Plus
 
+
+## Compiling custom QEMU
+
+../configure --target-list=arm-softmmu CFLAGS="-Wno-error" 
+
 sudo apt install gcc-arm-none-eabi
 
 
@@ -19,3 +24,9 @@ RASPPI=2
 # Choices are DE (default), ES, FR, IT, UK, US 
 #define DEFAULT_KEYMAP		"UK"
 DEFINE += -DDEFAULT_KEYMAP=\"UK\"
+
+
+## See also 
+
+* https://www.raspberrypi.org/forums/viewtopic.php?f=72&t=266203
+* https://www.raspberrypi.org/forums/viewtopic.php?f=72&t=90130
