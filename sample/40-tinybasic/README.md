@@ -4,6 +4,7 @@
 ## Compiling custom QEMU
 
 ../configure --target-list=arm-softmmu CFLAGS="-Wno-error" 
+make CFLAGS=-Wno-error
 
 sudo apt install gcc-arm-none-eabi
 
