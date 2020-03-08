@@ -15,6 +15,7 @@ cd /home/pi/Documents/qemu/builds/arm-softmmu
 
 
 Config.mk:
+```
 # For QEMU
 # https://www.raspberrypi.org/forums/viewtopic.php?f=72&t=90130&start=250
 DEFINE += -DNO_PHYSICAL_COUNTER -DUSE_QEMU_USB_FIX
@@ -25,9 +26,10 @@ RASPPI=2
 # Choices are DE (default), ES, FR, IT, UK, US 
 #define DEFAULT_KEYMAP		"UK"
 DEFINE += -DDEFAULT_KEYMAP=\"UK\"
+```
 
+## Links to other sites
 
-## See also 
+* [CircleOS + BASIC](https://www.raspberrypi.org/forums/viewtopic.php?f=72&t=266203&p=1617466#p1617466)
+* [Circle - C++ bare metal environment (with USB)](https://www.raspberrypi.org/forums/viewtopic.php?f=72&t=90130&start=250)
 
-* https://www.raspberrypi.org/forums/viewtopic.php?f=72&t=266203
-* https://www.raspberrypi.org/forums/viewtopic.php?f=72&t=90130
