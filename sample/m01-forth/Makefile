@@ -1,10 +1,6 @@
-#
-# Makefile
-#
-
 CIRCLEHOME = ../..
 
-OBJS	= main.o kernel.o
+OBJS	= main.o kernel.o forth.o
 
 LIBS	= $(CIRCLEHOME)/lib/libcircle.a
 
