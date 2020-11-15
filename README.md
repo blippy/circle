@@ -10,12 +10,29 @@ Circle is a C++ bare metal programming environment for the Raspberry Pi. It shou
 
 Circle includes bigger (optional) third-party C-libraries for specific purposes in addon/ now. This is the reason why GitHub rates the project as a C-language-project. The main Circle libraries are written in C++ using classes instead. That's why it is named a C++ programming environment.
 
-The 42nd Step
+Release 43.1
+------------
+
+This intermediate release adds **USB plug-and-play** support to the classes `CConsole` and `CUGUI` and related samples (*sample/32-i2cshell* and *addon/ugui/sample*).
+
+Furthermore two **important bug fixes** have been applied. The first one affects the handling of interrupts in the xHCI USB driver for the Raspberry Pi 4, where the interrupts and thus all data transfers might have been stalled after a random amount of time. The second one prevents the access to deleted USB device object, when an USB device is surprise-removed from the Raspberry Pi 1-3 or Zero.
+
+Some effort have been spent to allow **reducing the boot time**, when using the USB driver and the network subsystem. This is shown in [sample/18-ntptime](sample/18-ntptime). Have a look at the [README file](sample/18-ntptime/README) for details.
+
+The **make target "tftpboot"** has been added to *Rules.mk*. If you have installed the *sample/38-bootloader* on your Raspberry Pi with Ethernet interface and have configured the host name (e.g. "raspberrypi") or IP address of it as `TFTPHOST=` in the file *Config.mk*, you can build and start a test program in a row using `make tftpboot`.
+
+The 43rd Step
 -------------
 
-This release adds **Wireless LAN access** support in [addon/wlan](addon/wlan) to Circle. Please read the [README file](addon/wlan/sample/README) of the sample program for details! The WLAN support in Circle is still experimental.
+This release adds **USB plug-and-play** (USB PnP) support to Circle. It has been implemented for all USB device drivers, which can be subject of dynamic device attachments or removes, and for a number of sample programs. Existing applications have to be modified to support USB PnP, but this is not mandatory. An existing application can continue to work without USB PnP unmodified. Please see the file [doc/usb-plug-and-play.txt](doc/usb-plug-and-play.txt) for details on USB PnP support and [sample/README](sample/README) for information about which samples are USB PnP aware!
 
-To allow parallel access to WLAN and SD card, a new **SDHOST driver** for SD card access on Raspberry Pi 1-3 and Zero has been added. You can return to the previous EMMC interface in case of problems (e.g. if using QEMU) or for real-time applications by adding `DEFINE += -DNO_SDHOST` to *Config.mk*. WLAN access is not possible then. On Raspberry Pi 4 the **EMMC2 interface** is used for SD card access now.
+USB PnP requires the **system option USE_USB_SOF_INTR** to be enabled in [include/circle/sysconfig.h](include/circle/sysconfig.h) on the Raspberry Pi 1-3 and Zero. Because it has proved to be beneficial for most other applications too, it is enabled by default now. Rarely it may be possible, that your application has disadvantages from it. In this case you should disable this option and go back to the previous setting (e.g. if you need the maximum network performance).
+
+An important issue has been fixed throughout Circle, which affected the **alignment of buffers used for DMA operations**. These buffers must be aligned to the size of a data-cache line (32 bytes on Raspberry 1 and Zero, 64 bytes otherwise) in base address and size. In some cases your application may need to be updated to meet this requirement. For example this applies to the samples *05-usbsimple*, *06-ethernet* and *25-spidma*. Please see the file [doc/dma-buffer-requirements.txt](doc/dma-buffer-requirements.txt) for details!
+
+Another problem in the past was, that the output to screen or serial device affected the **IRQ timing of applications**. There is the system option `REALTIME`, which already improved this timing. Unfortunately it was not possible to use low- or full-speed USB devices (e.g. USB keyboard) on the Raspberry Pi 1-3 and Zero, when this option was enabled. Now this is supported, when the system option `USE_USB_SOF_INTR` is enabled together with `REALTIME`.
+
+The new **class CWriteBufferDevice** can be used to buffer the screen or serial output in a way, that writing to these devices is still possible at *IRQ_LEVEL*, even when the option `REALTIME` is defined. Using the new **class CLatencyTester** it is demonstrated in the new [sample/40-irqlatency](sample/40-irqlatency), how this affects the IRQ latency of the system. Please read the [README file](sample/40-irqlatency/README) of this sample for details!
 
 Features
 --------
@@ -46,6 +63,7 @@ Circle supports the following features:
 |                       | System timer (with kernel timers)                   |
 |                       | Platform DMA controller                             |
 |                       | EMMC SD card interface driver                       |
+|                       | SDHOST SD card interface driver (Raspberry Pi 1-3)  |
 |                       | PWM output (2 channels)                             |
 |                       | PWM sound output (on headphone jack)                |
 |                       | I2C master(s) and slave                             |
@@ -57,6 +75,7 @@ Circle supports the following features:
 |                       | Official Raspberry Pi touch screen                  |
 |                       | VCHIQ interface and audio service drivers           |
 |                       | BCM54213PE Gigabit Ethernet NIC of Raspberry Pi 4   |
+|                       | Wireless LAN access (experimental)                  |
 |                       |                                                     |
 | USB                   | Host controller interface (HCI) drivers             |
 |                       | Standard hub driver (USB 2.0 only)                  |
@@ -125,6 +144,8 @@ Circle supports building 64-bit applications, which can be run on the Raspberry 
 
 The recommended toolchain to build 64-bit applications with Circle can be downloaded [here](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-a/downloads). Circle has been tested with the version *9.2-2019.12* (gcc-arm-9.2-2019.12-x86_64-aarch64-none-elf.tar.xz) from this website.
 
+There are distro-provided toolchains on certain Linux platforms (e.g. *g++-aarch64-linux-gnu* on Ubuntu or *gcc-c++-aarch64-linux-gnu* on Fedora), which may work with Circle and can be a quick way to use it, but you have to test this by yourself. If you encounter problems (e.g. no reaction at all, link failure with external library) using a distro-provided toolchain, please try the recommended toolchain (see above) first, before reporting an issue.
+
 First edit the file *Rules.mk* and set the Raspberry Pi architecture (*AARCH*, 32 or 64) and the *PREFIX64* of your toolchain commands. The *RASPPI* variable has to be set to 3 or 4 for `AARCH = 64`. Alternatively you can create a *Config.mk* file (which is ignored by git) and set the Raspberry Pi architecture and the *PREFIX64* variable to the prefix of your compiler like this (don't forget the dash at the end):
 
 ```
@@ -166,6 +187,14 @@ Directories
 Classes
 -------
 
+The following C++ classes were added to Circle:
+
+Base library
+
+* CLatencyTester: Measures the IRQ latency of the running code.
+* CNumberPool: Allocation pool for (device) numbers.
+* CWriteBufferDevice: Filter for buffered write to (e.g. screen) device.
+
 The available Circle classes are listed in the file [doc/classes.txt](doc/classes.txt). If you have Doxygen installed on your computer you can build a [class documentation](doc/html/index.html) in doc/html/ using:
 
 `./makedoc`
@@ -177,8 +206,10 @@ Additional Topics
 
 * [Standard library support](doc/stdlib-support.txt)
 * [Dynamic memory management and the "new" operator](doc/new-operator.txt)
+* [DMA buffer requirements](doc/dma-buffer-requirements.txt)
 * [Serial bootloader support](doc/bootloader.txt)
 * [Multi-core support](doc/multicore.txt)
+* [USB plug-and-play](doc/usb-plug-and-play.txt)
 * [Debugging support](doc/debug.txt)
 * [QEMU support](doc/qemu.txt)
 * [Eclipse IDE support](doc/eclipse-support.txt)

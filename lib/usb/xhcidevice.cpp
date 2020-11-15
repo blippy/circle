@@ -23,12 +23,14 @@
 #include <circle/logger.h>
 #include <circle/memory.h>
 #include <circle/util.h>
+#include <circle/bcmpropertytags.h>
 #include <assert.h>
 
 static const char From[] = "xhci";
 
-CXHCIDevice::CXHCIDevice (CInterruptSystem *pInterruptSystem, CTimer *pTimer)
-:	m_PCIeHostBridge (pInterruptSystem),
+CXHCIDevice::CXHCIDevice (CInterruptSystem *pInterruptSystem, CTimer *pTimer, boolean bPlugAndPlay)
+:	CUSBHostController (bPlugAndPlay),
+	m_PCIeHostBridge (pInterruptSystem),
 	m_SharedMemAllocator (
 		CMemorySystem::GetCoherentPage (COHERENT_SLOT_XHCI_START),
 		CMemorySystem::GetCoherentPage (COHERENT_SLOT_XHCI_END) + PAGE_SIZE - 1),
@@ -71,7 +73,7 @@ CXHCIDevice::~CXHCIDevice (void)
 	m_pMMIO = 0;
 }
 
-boolean CXHCIDevice::Initialize (void)
+boolean CXHCIDevice::Initialize (boolean bScanDevices)
 {
 	// init class-specific allocators in USB library
 	INIT_PROTECTED_CLASS_ALLOCATOR (CUSBRequest, XHCI_CONFIG_MAX_REQUESTS, IRQ_LEVEL);
@@ -83,6 +85,14 @@ boolean CXHCIDevice::Initialize (void)
 
 		return FALSE;
 	}
+
+	// load VIA VL805 firmware after PCIe reset
+	CBcmPropertyTags Tags;
+	TPropertyTagSimple NotifyXHCIReset;
+	NotifyXHCIReset.nValue =   XHCI_PCIE_BUS  << 20
+				 | XHCI_PCIE_SLOT << 15
+				 | XHCI_PCIE_FUNC << 12;
+	Tags.GetTag (PROPTAG_NOTIFY_XHCI_RESET, &NotifyXHCIReset, sizeof NotifyXHCIReset, 4);
 
 	if (!m_PCIeHostBridge.ConnectMSI (InterruptStub, this))
 	{
@@ -195,11 +205,15 @@ boolean CXHCIDevice::Initialize (void)
 						 | XHCI_REG_OP_USBCMD_RUN_STOP);
 
 	// init root hub
-	if (!m_pRootHub->Initialize ())
+	if (   !IsPlugAndPlay ()
+	    || bScanDevices)
 	{
-		CLogger::Get ()->Write (From, LogError, "Cannot init root hub");
+		if (!m_pRootHub->Initialize ())
+		{
+			CLogger::Get ()->Write (From, LogError, "Cannot init root hub");
 
-		return FALSE;
+			return FALSE;
+		}
 	}
 
 #if !defined (NDEBUG) && defined (XHCI_DEBUG2)
@@ -310,10 +324,25 @@ void CXHCIDevice::InterruptHandler (unsigned nVector)
 		return;
 	}
 
+	TXHCITRB *pEventTRB = 0;
+	TXHCITRB *pNextEventTRB;
 	assert (m_pEventManager != 0);
-	while (m_pEventManager->HandleEvents ())
+	while ((pNextEventTRB = m_pEventManager->HandleEvents ()) != 0)
 	{
-		// just loop
+		pEventTRB = pNextEventTRB;
+	}
+
+	if (pEventTRB != 0)
+	{
+		m_pMMIO->rt_write64 (0, XHCI_REG_RT_IR_ERDP_LO,   XHCI_TO_DMA (pEventTRB)
+								| XHCI_REG_RT_IR_ERDP_LO_EHB);
+	}
+	else
+	{
+		m_pMMIO->rt_write64 (0, XHCI_REG_RT_IR_ERDP_LO,
+				       (  m_pMMIO->rt_read64 (0, XHCI_REG_RT_IR_ERDP_LO)
+				        & XHCI_REG_RT_IR_ERDP__MASK)
+				     | XHCI_REG_RT_IR_ERDP_LO_EHB);
 	}
 }
 

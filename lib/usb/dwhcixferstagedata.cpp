@@ -2,7 +2,7 @@
 // dwhcixferstagedata.cpp
 //
 // Circle - A C++ bare metal environment for Raspberry Pi
-// Copyright (C) 2014-2018  R. Stange <rsta2@o2online.de>
+// Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
 // 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -430,6 +430,41 @@ u32 CDWHCITransferStageData::GetTransactionStatus (void) const
 	return m_nTransactionStatus;
 }
 
+TUSBError CDWHCITransferStageData::GetUSBError (void) const
+{
+	if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_STALL)
+	{
+		return USBErrorStall;
+	}
+
+	if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_XACT_ERROR)
+	{
+		return USBErrorTransaction;
+	}
+
+	if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_BABBLE_ERROR)
+	{
+		return USBErrorBabble;
+	}
+
+	if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_FRAME_OVERRUN)
+	{
+		return USBErrorFrameOverrun;
+	}
+
+	if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_DATA_TOGGLE_ERROR)
+	{
+		return USBErrorDataToggle;
+	}
+
+	if (m_nTransactionStatus & DWHCI_HOST_CHAN_INT_AHB_ERROR)
+	{
+		return USBErrorHostBus;
+	}
+
+	return USBErrorUnknown;
+}
+
 boolean CDWHCITransferStageData::IsStageComplete (void) const
 {
 	return m_nPackets == 0;
@@ -459,6 +494,12 @@ CUSBRequest *CDWHCITransferStageData::GetURB (void) const
 {
 	assert (m_pURB != 0);
 	return m_pURB;
+}
+
+CUSBDevice *CDWHCITransferStageData::GetDevice (void) const
+{
+	assert (m_pDevice != 0);
+	return m_pDevice;
 }
 
 CDWHCIFrameScheduler *CDWHCITransferStageData::GetFrameScheduler (void) const

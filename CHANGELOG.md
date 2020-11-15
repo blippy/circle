@@ -5,8 +5,49 @@ Change Log
 
 This file contains the release notes (the major changes) since Circle Step30 for quick access. For earlier releases please checkout the respective git tag and look into README.md. More info is attached to the release tags (git cat-file tag StepNN) and is available in the git commit log.
 
+Release 43.1
+------------
+
+This intermediate release adds **USB plug-and-play** support to the classes `CConsole` and `CUGUI` and related samples (*sample/32-i2cshell* and *addon/ugui/sample*).
+
+Furthermore two **important bug fixes** have been applied. The first one affects the handling of interrupts in the xHCI USB driver for the Raspberry Pi 4, where the interrupts and thus all data transfers might have been stalled after a random amount of time. The second one prevents the access to deleted USB device object, when an USB device is surprise-removed from the Raspberry Pi 1-3 or Zero.
+
+Some effort have been spent to allow **reducing the boot time**, when using the USB driver and the network subsystem. This is shown in [sample/18-ntptime](sample/18-ntptime). Have a look at the [README file](sample/18-ntptime/README) for details.
+
+The **make target "tftpboot"** has been added to *Rules.mk*. If you have installed the *sample/38-bootloader* on your Raspberry Pi with Ethernet interface and have configured the host name (e.g. "raspberrypi") or IP address of it as `TFTPHOST=` in the file *Config.mk*, you can build and start a test program in a row using `make tftpboot`.
+
+The 43rd Step
+-------------
+
+2020-10-02
+
+This release adds **USB plug-and-play** (USB PnP) support to Circle. It has been implemented for all USB device drivers, which can be subject of dynamic device attachments or removes, and for a number of sample programs. Existing applications have to be modified to support USB PnP, but this is not mandatory. An existing application can continue to work without USB PnP unmodified. Please see the file [doc/usb-plug-and-play.txt](doc/usb-plug-and-play.txt) for details on USB PnP support and [sample/README](sample/README) for information about which samples are USB PnP aware!
+
+USB PnP requires the **system option USE_USB_SOF_INTR** to be enabled in [include/circle/sysconfig.h](include/circle/sysconfig.h) on the Raspberry Pi 1-3 and Zero. Because it has proved to be beneficial for most other applications too, it is enabled by default now. Rarely it may be possible, that your application has disadvantages from it. In this case you should disable this option and go back to the previous setting (e.g. if you need the maximum network performance).
+
+An important issue has been fixed throughout Circle, which affected the **alignment of buffers used for DMA operations**. These buffers must be aligned to the size of a data-cache line (32 bytes on Raspberry 1 and Zero, 64 bytes otherwise) in base address and size. In some cases your application may need to be updated to meet this requirement. For example this applies to the samples *05-usbsimple*, *06-ethernet* and *25-spidma*. Please see the file [doc/dma-buffer-requirements.txt](doc/dma-buffer-requirements.txt) for details!
+
+Another problem in the past was, that the output to screen or serial device affected the **IRQ timing of applications**. There is the system option `REALTIME`, which already improved this timing. Unfortunately it was not possible to use low- or full-speed USB devices (e.g. USB keyboard) on the Raspberry Pi 1-3 and Zero, when this option was enabled. Now this is supported, when the system option `USE_USB_SOF_INTR` is enabled together with `REALTIME`.
+
+The new **class CWriteBufferDevice** can be used to buffer the screen or serial output in a way, that writing to these devices is still possible at *IRQ_LEVEL*, even when the option `REALTIME` is defined. Using the new **class CLatencyTester** it is demonstrated in the new [sample/40-irqlatency](sample/40-irqlatency), how this affects the IRQ latency of the system. Please read the [README file](sample/40-irqlatency/README) of this sample for details!
+
+Release 42.1
+------------
+
+2020-08-22
+
+This intermediate release adds support for the **DMA4 "large address" channels** of the Raspberry Pi 4, which is available using the already known `CDMAChannel` class with the channel ID `DMA_CHANNEL_EXTENDED`. Despite the possibility to access more address bits, which is currently not used in Circle, the DMA4 channels provide a higher performance (compared to the legacy DMA channels). All (normally three available) DMA4 channels are free for application usage.
+
+Newer **Raspberry Pi 4 models (with 8 GB RAM)** do not have a dedicated EEPROM for the firmware of the xHCI USB controller. They need an additional property mailbox call for loading the xHCI firmware after PCIe reset. This call has been added.
+
+There has been no possibility for **application TCP flow control** before. An application sending much TCP data very fast was able to overrun the (low) heap, which caused a system halt. Now if `CSocket::Send()` is called with the flags parameter set to 0, the calling task will block until the TX queue is empty. This prevents the heap from overrun, but may slow down the transfer to some degree. If maximum transfer speed is wanted, the flags parameter can be set to `MSG_DONTWAIT`, but heap overrun must be prevented differently then (e.g. by sending less data).
+
+Another fix has been applied to **network name resolution** in the class `CDNSClient`, which might have failed before, if the DNS server was sending uncompressed answer records.
+
 The 42nd Step
 -------------
+
+2020-05-09
 
 This release adds **Wireless LAN access** support in [addon/wlan](addon/wlan) to Circle. Please read the [README file](addon/wlan/sample/README) of the sample program for details! The WLAN support in Circle is still experimental.
 

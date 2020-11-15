@@ -129,7 +129,7 @@ DEFINE	+= -D__circle__ -DRASPPI=$(RASPPI) -DSTDLIB_SUPPORT=$(STDLIB_SUPPORT) \
 
 AFLAGS	+= $(ARCH) $(DEFINE) $(INCLUDE) $(OPTIMIZE)
 CFLAGS	+= $(ARCH) -Wall -fsigned-char -ffreestanding $(DEFINE) $(INCLUDE) $(OPTIMIZE) -g
-CPPFLAGS+= $(CFLAGS) -std=c++14
+CPPFLAGS+= $(CFLAGS) -std=c++14 -Wno-aligned-new
 LDFLAGS	+= --section-start=.init=$(LOADADDR)
 
 ifeq ($(strip $(CHECK_DEPS)),1)
@@ -176,6 +176,11 @@ ifneq ($(strip $(SDCARD)),)
 install: $(TARGET).img
 	cp $(TARGET).img $(SDCARD)
 	sync
+endif
+
+ifneq ($(strip $(TFTPHOST)),)
+tftpboot: $(TARGET).img
+	tftp -m binary $(TFTPHOST) -c put $(TARGET).img
 endif
 
 #

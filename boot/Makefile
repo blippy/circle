@@ -8,8 +8,8 @@
 # Use most recent firmware test revision
 #FIRMWARE = master
 
-# Use firmware revision built/committed on: Feb 12 2020
-FIRMWARE ?= f4b58692fef0b9c16bd4564edb980fff73a758b3
+# Use firmware revision built/committed on: Aug 06 2020
+FIRMWARE ?= b571a3cfbb3198d445727f4a0057847fedce410b
 
 BASEURL = https://github.com/raspberrypi/firmware/blob/$(FIRMWARE)/boot
 
@@ -18,9 +18,13 @@ firmware: clean
 	wget -q -O COPYING.linux $(BASEURL)/COPYING.linux?raw=true
 	wget -q -O bootcode.bin $(BASEURL)/bootcode.bin?raw=true
 	wget -q -O fixup.dat $(BASEURL)/fixup.dat?raw=true
+	wget -q -O fixup_cd.dat $(BASEURL)/fixup_cd.dat?raw=true
 	wget -q -O start.elf $(BASEURL)/start.elf?raw=true
+	wget -q -O start_cd.elf $(BASEURL)/start_cd.elf?raw=true
 	wget -q -O fixup4.dat $(BASEURL)/fixup4.dat?raw=true
+	wget -q -O fixup4cd.dat $(BASEURL)/fixup4cd.dat?raw=true
 	wget -q -O start4.elf $(BASEURL)/start4.elf?raw=true
+	wget -q -O start4cd.elf $(BASEURL)/start4cd.elf?raw=true
 	wget -q -O bcm2711-rpi-4-b.dtb $(BASEURL)/bcm2711-rpi-4-b.dtb?raw=true
 
 all: firmware bootloader

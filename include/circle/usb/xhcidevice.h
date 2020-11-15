@@ -37,10 +37,11 @@
 class CXHCIDevice : public CUSBHostController	/// USB host controller interface (xHCI) driver
 {
 public:
-	CXHCIDevice (CInterruptSystem *pInterruptSystem, CTimer *pTimer);
+	CXHCIDevice (CInterruptSystem *pInterruptSystem, CTimer *pTimer,
+		     boolean bPlugAndPlay = FALSE);
 	~CXHCIDevice (void);
 
-	boolean Initialize (void);
+	boolean Initialize (boolean bScanDevices = TRUE);
 
 	void ReScanDevices (void);
 
