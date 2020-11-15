@@ -21,16 +21,45 @@
 #include <circle/string.h>
 #include <circle/debug.h>
 #include <assert.h>
-#include "forth.h"
+//#include "forth.h"
+#include <circle/interrupt.h>
+#include <circle/timer.h>
+//#include <circle/util.h>
+#include <circle/usb/usbhcidevice.h>
+#include <circle/usb/usbkeyboard.h>
+#include <circle/devicenameservice.h>
+
+CInterruptSystem irqs1;
+CTimer mytimer(&irqs1);
+//CTimer timer;
+
+CUSBHCIDevice usbdev(&irqs1, &mytimer, 1);
+//CUSBHCIDevice usbdev(&irqs, &timer, 1);
 
 
+int strlen(const char* str)
+{
+	int n = 0;
+	while(*str++) n++;
+	return n;
+}
 
-
+int puts(const char* str) 
+{
+	//char* s = str;
+	//const char* text = "hello world";
+	//while(*s) scr.Write(*s++, 1);
+	scr.Write(str, strlen(str));
+	scr.Write("\n", 1);
+	return 1;
+}
+	
 
 static const char FromKernel[] = "kernel";
 
 CKernel::CKernel (void)
-:	m_Screen (m_Options.GetWidth (), m_Options.GetHeight ()),
+:	
+	//m_Screen (m_Options.GetWidth (), m_Options.GetHeight ()),
 	m_Logger (m_Options.GetLogLevel ())
 {
 	m_ActLED.Blink (5);	// show we are alive
@@ -44,26 +73,30 @@ boolean CKernel::Initialize (void)
 {
 	boolean bOK = TRUE;
 
-	if (bOK)
-	{
-		bOK = m_Screen.Initialize ();
-	}
+	//if (bOK)
+	//{
+	//	bOK = m_Screen.Initialize ();
+	//}
+	bOK = scr.Initialize();
 	
+	puts("screen initialised");
 	if (bOK)
 	{
 		bOK = m_Serial.Initialize (115200);
 	}
+	puts("serial initialised");
 	
 	if (bOK)
 	{
 		CDevice *pTarget = m_DeviceNameService.GetDevice (m_Options.GetLogDevice (), FALSE);
 		if (pTarget == 0)
 		{
-			pTarget = &m_Screen;
+			pTarget = &scr;
 		}
 
 		bOK = m_Logger.Initialize (pTarget);
 	}
+	puts("logger initialised");
 	
 	return bOK;
 }
@@ -79,15 +112,15 @@ TShutdownMode CKernel::Run (void)
 	{
 		if (chChar % 8 == 0)
 		{
-			m_Screen.Write ("\n", 1);
+			scr.Write ("\n", 1);
 		}
 
 		CString Message;
 		Message.Format ("%02X: \'%c\' ", (unsigned) chChar, chChar);
 		
-		m_Screen.Write ((const char *) Message, Message.GetLength ());
+		scr.Write ((const char *) Message, Message.GetLength ());
 	}
-	m_Screen.Write ("\n", 1);
+	scr.Write ("\n", 1);
 
 #ifndef NDEBUG
 	// some debugging features

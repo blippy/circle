@@ -8,15 +8,23 @@
  *
  */
 
+#include "kernel.h"
+
 #include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
+//#include <stdio.h>
 #include <string.h>
 
-#include "forth.h"
+
+//template <class T>
+//void printf(char* a, T b) { puts("TODO"); }
+
+#define printf(a, b) puts("TODO")
+#define stdin 0
+#define fgets(a, b, c) puts("TODO")
 
 //typedef intptr_t cell_t;
 #if(__SIZEOF_POINTER__ ==4)
@@ -93,6 +101,11 @@ dent_s *latest = NULL; // latest word being defined
 //const ubyte F_IMM = 1 << 7;
 #define F_IMM (1<<7)
 
+int isspace(int c)
+{
+	return ((c=='\t') || (c==' ') || (c=='\r') || (c=='\n'));
+}
+
 char toupper(char c)
 {
 	if(('a'<=c) && (c <= 'z'))
@@ -116,7 +129,8 @@ int strcasecmp(const char *s1, const char *s2)
 
         a = (unsigned)*(s1+offset);
         b = (unsigned)*(s2+offset);
-        ch = toupper(a) - toupper(b);
+      ch = toupper((char)a) - toupper((char)b);
+	      //ch = toupper(a) - toupper(b);
         if( ch<0 || ch>0 )
             return(ch);
         offset++;
@@ -695,16 +709,14 @@ void eval_string(const char* str)
 
 const char* derived[] = {
 	": VARIABLE create 0 , ;",
-	": 1+ 1 + ;",
+	//": 1+ 1 + ;",
 	": CR 10 emit ;",
-	//": .\" z\" type ;",
 	": IF compile 0branch here 0 , ; immediate",
 	": THEN here swap ! ; immediate",
 	": ELSE compile branch here >r 0 , here swap ! r> ; immediate", 
 	": CONSTANT <builds , does> @ ;",
 	": BEGIN here ; immediate",
 	": ?AGAIN compile ?branch , ; immediate",
-	//": DEFER 	<builds  [ ' xdefer ] , does> @  execute ;",
 	0
 };
 
@@ -712,6 +724,7 @@ void add_derived()
 {
 	const char** strs = derived;
 	while(*strs) {
+		puts(*strs);
 		eval_string(*strs++);
 	}
 
@@ -749,12 +762,14 @@ int forth_main()
 	assert(sizeof(size_t) == sizeof(cell_t));
 	compiling = false;
 	add_primitives();
-	add_derived();
+	puts("added primitives");
+	//add_derived();
+	puts("skipped derived");
 
-	if(0) {
-		//p_words();
+	if(1) {
 		puts("words are");
-		process_token("words");
+		p_words();
+		//process_token("words");
 		puts("fin");
 	}
 

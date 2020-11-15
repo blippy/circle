@@ -1,3 +1,4 @@
+#pragma once
 //
 // kernel.h
 //
@@ -17,8 +18,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-#ifndef _kernel_h
-#define _kernel_h
 
 #include <circle/memory.h>
 #include <circle/actled.h>
@@ -28,6 +27,9 @@
 #include <circle/serial.h>
 #include <circle/logger.h>
 #include <circle/types.h>
+
+inline CScreenDevice scr(1920, 1080);
+int forth_main();
 
 enum TShutdownMode
 {
@@ -52,9 +54,10 @@ private:
 	CActLED			m_ActLED;
 	CKernelOptions		m_Options;
 	CDeviceNameService	m_DeviceNameService;
-	CScreenDevice		m_Screen;
+	//CScreenDevice		m_Screen;
 	CSerialDevice		m_Serial;
 	CLogger			m_Logger;
 };
 
-#endif
+int puts(const char* str) ;
+
