@@ -183,10 +183,6 @@ tftpboot: $(TARGET).img
 	tftp -m binary $(TFTPHOST) -c put $(TARGET).img
 endif
 
-#
-# Eclipse support
-#
-
 SERIALPORT  ?= /dev/ttyUSB0
 USERBAUD ?= 115200
 FLASHBAUD ?= 115200
@@ -196,14 +192,10 @@ $(TARGET).hex: $(TARGET).img
 	@echo "  COPY  $(TARGET).hex"
 	@$(PREFIX)objcopy $(TARGET).elf -O ihex $(TARGET).hex
 
-flash: $(TARGET).hex
-ifneq ($(strip $(REBOOTMAGIC)),)
-	python3 $(CIRCLEHOME)/tools/reboottool.py $(REBOOTMAGIC) $(SERIALPORT) $(USERBAUD)
-endif
-	python3 $(CIRCLEHOME)/tools/flasher.py $(TARGET).hex $(SERIALPORT) $(FLASHBAUD)
-
 monitor:
 	putty -serial $(SERIALPORT) -sercfg $(USERBAUD)
 
 install:
 	cp *img /media/pi/5794-CDC0
+
+flash : install

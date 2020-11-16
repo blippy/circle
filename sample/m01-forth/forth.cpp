@@ -111,6 +111,16 @@ char toupper(char c)
 
 int strcasecmp(const char *s1, const char *s2)
 {
+	while(*s1 && *s2) {
+		if(toupper(*s1) != toupper(*s2)) break;
+		s1++;
+		s2++;
+	}
+	return toupper(*s1) - toupper(*s2);
+}
+
+int strcasecmpXXX(const char *s1, const char *s2)
+{
 	int offset,ch;
 	unsigned char a,b;
 
@@ -152,6 +162,7 @@ char* strupr(char* str)
 bool int_str(const char*s, cell_t *v)
 {
 	*v = 0;
+	if((s==0) || (*s==0)) return false;
 	cell_t sgn = 1;
 	if(*s=='-') { sgn = -1; s++; }
 	if(*s == '+') s++;
@@ -239,7 +250,6 @@ void embed_literal(cell_t v)
 {
 	heapify_word("LIT");
 	heapify(v);
-
 }
 
 
@@ -731,10 +741,13 @@ void process_token(const char* token)
 	if(cfa == 0) {
 		cell_t v;
 		if(int_str(token, &v)) {
-			if(compiling)
+			if(compiling) {
+				//puts("about to embed literal");
 				embed_literal(v);
-			else
+				puts("done embedding literal"); // TODO the existence of this line prevents crashing
+			} else {
 				push(v);
+			}
 		} else {
 			undefined(token);
 		}
