@@ -10,6 +10,9 @@
 
 #include "kernel.h"
 
+#include <fatfs/ff.h>
+
+
 #include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
@@ -18,13 +21,17 @@
 //#include <stdio.h>
 #include <string.h>
 
+#include "compat.h"
 
 //template <class T>
 //void printf(char* a, T b) { puts("TODO"); }
 
-#define printf(a, b) puts("TODO")
-#define stdin 0
-#define fgets(a, b, c) puts("TODO")
+//#define printf(a, b) puts("TODO")
+//#define puts
+//#define printf(a, b)
+//#define stdin 0
+//#define fgets(a, b, c) puts("TODO")
+//#define fgets(a, b, c) 0
 
 //typedef intptr_t cell_t;
 #if(__SIZEOF_POINTER__ ==4)
@@ -757,7 +764,7 @@ void process_tib()
 	rest = 0;
 	while(get_word()) process_token(token);
 }
-int forth_main()
+int main_routine()
 {
 	assert(sizeof(size_t) == sizeof(cell_t));
 	compiling = false;
@@ -773,7 +780,7 @@ int forth_main()
 		puts("fin");
 	}
 
-	while(fgets(tib, sizeof(tib), stdin)) {
+	while(getsn(tib, sizeof(tib))) {
 		process_tib();
 		if(show_prompt) puts("  ok");
 	}
