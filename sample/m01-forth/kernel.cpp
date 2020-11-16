@@ -36,9 +36,9 @@
 static const char FromKernel[] = "kernel";
 
 void main_basic();
-CKernel *g_kernel = 0;
 
-CKernel *CKernel::s_pThis = 0;
+
+//CKernel *CKernel::s_pThis = 0;
 
 CKernel::CKernel (void)
 	:	m_Screen (m_Options.GetWidth (), m_Options.GetHeight ()),
@@ -48,15 +48,13 @@ CKernel::CKernel (void)
 	m_EMMC (&m_Interrupt, &m_Timer, &m_ActLED),
 	m_ShutdownMode (ShutdownNone)
 {
-	s_pThis = this;
 	g_kernel = this;
-
 	m_ActLED.Blink (5);	// show we are alive
 }
 
 CKernel::~CKernel (void)
 {
-	s_pThis = 0;
+	g_kernel = 0;
 }
 
 boolean CKernel::Initialize (void)
@@ -89,18 +87,7 @@ boolean CKernel::Initialize (void)
 	return bOK;
 }
 
-int getchar()
-{
-	static char c;
-	int n;
-	do { 
-		n = g_kernel->m_keyb->Read(&c, 1);
-	} while (n ==0);
-#if 0
-	g_kernel->m_Screen.Write(&c, 1);
-#endif
-	return c;
-}
+
 
 
 void CKernel::cmd_type(unsigned char* filename)
@@ -283,13 +270,9 @@ TShutdownMode CKernel::Run (void)
 
 void CKernel::ShutdownHandler (void)
 {
-	assert (s_pThis != 0);
-	s_pThis->m_ShutdownMode = ShutdownReboot;
+	assert (g_kernel != 0);
+	g_kernel->m_ShutdownMode = ShutdownReboot;
 }
 
 
-int putchar(int c)
-{
-	g_kernel->m_Screen.Write(&c, 1);
-	return c;
-}
+

@@ -2,7 +2,7 @@ CIRCLEHOME = ../..
 
 OBJS	= main.o kernel.o
 OBJS += forth.o
-OBJS += compat.o
+OBJS += compat.o printf.o
 
 LIBS	= $(CIRCLEHOME)/lib/usb/libusb.a \
 	  $(CIRCLEHOME)/lib/input/libinput.a \

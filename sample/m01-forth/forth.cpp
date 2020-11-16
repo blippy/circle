@@ -22,6 +22,7 @@
 #include <string.h>
 
 #include "compat.h"
+#include "printf.h"
 
 //template <class T>
 //void printf(char* a, T b) { puts("TODO"); }
@@ -123,27 +124,27 @@ char toupper(char c)
 
 int strcasecmp(const char *s1, const char *s2)
 {
-    int offset,ch;
-    unsigned char a,b;
+	int offset,ch;
+	unsigned char a,b;
 
-    offset = 0;
-    ch = 0;
-    while( *(s1+offset) != '\0' )
-    {
-        /* check for end of s2 */
-        if( *(s2+offset)=='\0')
-            return( *(s1+offset) );
+	offset = 0;
+	ch = 0;
+	while( *(s1+offset) != '\0' )
+	{
+		/* check for end of s2 */
+		if( *(s2+offset)=='\0')
+			return( *(s1+offset) );
 
-        a = (unsigned)*(s1+offset);
-        b = (unsigned)*(s2+offset);
-      ch = toupper((char)a) - toupper((char)b);
-	      //ch = toupper(a) - toupper(b);
-        if( ch<0 || ch>0 )
-            return(ch);
-        offset++;
-    }
+		a = (unsigned)*(s1+offset);
+		b = (unsigned)*(s2+offset);
+		ch = toupper((char)a) - toupper((char)b);
+		//ch = toupper(a) - toupper(b);
+		if( ch<0 || ch>0 )
+			return(ch);
+		offset++;
+	}
 
-    return(ch);
+	return(ch);
 }
 
 /* not sure if this is strictly necessary
@@ -258,13 +259,13 @@ void embed_literal(cell_t v)
 char* token;
 char* rest;
 /*
-char* delim_word (char* delims, bool upper)
-{
-	token = strtok_r(rest, delims, &rest);
-	if(upper) strupr(token);
-	return token;
-}
-*/
+   char* delim_word (char* delims, bool upper)
+   {
+   token = strtok_r(rest, delims, &rest);
+   if(upper) strupr(token);
+   return token;
+   }
+   */
 
 char* get_word () 
 { 
@@ -425,7 +426,7 @@ void p_z_slash ()
 	}
 
 	//char* src = 0; // delim_word("\"", false);
-	 
+
 	//do {} while(*hptr++ = *src++);
 	token += 3; // movwe beyong the z" 
 	while(1) {
@@ -600,7 +601,7 @@ void p_len()
 {
 	push(strlen((const char*) pop()));
 }
-		
+
 void p_name()
 {
 	puts(name_cfa((cellptr) pop()));
@@ -618,12 +619,12 @@ void p_see()
 	get_word();
 	cellptr cfa = (cellptr) cfa_find(token);
 	if(cfa == 0) { puts("UNFOUND"); return; }
-	
+
 	// determine if immediate
 	dent_s* dw = (dent_s*) cfa;
 	dw--;
 	if(dw->flags & F_IMM) puts("IMMEDIATE");
-	
+
 	//cfa = (cellptr) dref(cfa);
 	if((cellptr) dref(cfa) != cfa_docol) {
 		puts("PRIM");
@@ -764,8 +765,17 @@ void process_tib()
 	rest = 0;
 	while(get_word()) process_token(token);
 }
+
+void get_tib() { fgets(tib, sizeof(tib),0); }
+
 int main_routine()
 {
+	puts("hello from forth");
+	while(1) {
+		puts("tell me something");
+		get_tib();
+	}
+
 	assert(sizeof(size_t) == sizeof(cell_t));
 	compiling = false;
 	add_primitives();
@@ -780,7 +790,7 @@ int main_routine()
 		puts("fin");
 	}
 
-	while(getsn(tib, sizeof(tib))) {
+	while(fgets(tib, sizeof(tib),0)) {
 		process_tib();
 		if(show_prompt) puts("  ok");
 	}

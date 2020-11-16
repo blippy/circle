@@ -89,8 +89,7 @@ public:
 	void cmd_type(unsigned char* filename);
 };
 
-extern CKernel *g_kernel;
-int getchar();
-int putchar(int c);
+inline CKernel *g_kernel =0;
+
 
 
