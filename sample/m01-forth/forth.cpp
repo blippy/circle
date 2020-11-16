@@ -8,9 +8,6 @@
  *
  */
 
-#include "kernel.h"
-
-#include <fatfs/ff.h>
 
 
 #include <assert.h>
@@ -21,18 +18,8 @@
 //#include <stdio.h>
 #include <string.h>
 
-#include "compat.h"
-#include "printf.h"
+#include "forth.h"
 
-//template <class T>
-//void printf(char* a, T b) { puts("TODO"); }
-
-//#define printf(a, b) puts("TODO")
-//#define puts
-//#define printf(a, b)
-//#define stdin 0
-//#define fgets(a, b, c) puts("TODO")
-//#define fgets(a, b, c) 0
 
 //typedef intptr_t cell_t;
 #if(__SIZEOF_POINTER__ ==4)
@@ -770,12 +757,6 @@ void get_tib() { fgets(tib, sizeof(tib),0); }
 
 int main_routine()
 {
-	puts("hello from forth");
-	while(1) {
-		puts("tell me something");
-		get_tib();
-	}
-
 	assert(sizeof(size_t) == sizeof(cell_t));
 	compiling = false;
 	add_primitives();
