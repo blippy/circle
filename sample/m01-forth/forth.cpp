@@ -744,7 +744,7 @@ void process_token(const char* token)
 			if(compiling) {
 				//puts("about to embed literal");
 				embed_literal(v);
-				puts("done embedding literal"); // TODO the existence of this line prevents crashing
+				//puts("done embedding literal"); // TODO the existence of this line prevents crashing
 			} else {
 				push(v);
 			}
