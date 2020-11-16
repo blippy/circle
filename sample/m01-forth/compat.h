@@ -14,6 +14,7 @@ extern "C" {
 void puts(const char* str);
 char* fgets(char* s, int n, FILE *iop);
 int getc(FILE* stream);
+int feof(FILE* stream);
 
 void puts(const char* str);
 int getchar();

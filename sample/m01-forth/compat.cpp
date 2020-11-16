@@ -38,6 +38,8 @@ int fgetc(FILE* stream)
 
 }
 
+int feof(FILE* stream) { return 0; }
+
 /*
  * returns a char read as an unsigned char to an int, or EOF on end of file or erro
  */
