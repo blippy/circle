@@ -417,7 +417,7 @@ void p_z_slash ()
 	//cell_t loc = (cell_t)hptr + sizeof(cell_t);
 	cell_t loc = (cell_t)hptr + 0* sizeof(cell_t);
 	if(compiling) {
-		heapify_word("BRANCH");
+		heapify_word("EMBIN");
 		loc = (cell_t) hptr;
 		heapify(2572); // leet for zstr
 	}
@@ -425,7 +425,7 @@ void p_z_slash ()
 	//char* src = 0; // delim_word("\"", false);
 
 	//do {} while(*hptr++ = *src++);
-	token += 3; // movwe beyong the z" 
+	token += 3; // move beyong the z" 
 	while(1) {
 		*hptr = *token;
 		if(*hptr == '"' || *hptr == 0) break;
@@ -634,6 +634,22 @@ void p_see()
 		char* name = name_cfa(cfa1);
 		puts(name);
 		if(streq(name, "LIT")) printf("%ld\n", *(++cfa));
+		if(streq(name, "EMBIN")) {
+			cellptr fin = (cellptr) dref(++cfa);
+			//printf("fin=%lx\n", fin);
+			char* cptr = (char*) (++cfa);
+			//while((cellptr*)cptr != (cellptr*)fin) {				
+			int i =0;
+			//while(i<24) {				
+			while(cptr != (char*) fin) {				
+				printf("%c", *cptr);
+				//printf(" %p\n", cptr);
+				cptr++;
+				i++;
+			}
+			puts("\nEMBIN END");
+			cfa = --fin;
+		}
 		if(streq(name, ";")) break;
 		//puts("again");
 	}
@@ -647,6 +663,7 @@ void p_see()
 
 typedef struct {ubyte flags; const char* zname; codeptr fn; } prim_s;
 prim_s prims[] =  {
+	{0,	"EMBIN", p_branch},
 	{0,	"DOCOL", docol},
 	{0,	"SEE", p_see},
 	{0,	".NAME", p_name},
@@ -714,7 +731,7 @@ void eval_string(const char* str)
 
 const char* derived[] = {
 	": VARIABLE create 0 , ;",
-	//": 1+ 1 + ;",
+	": 1+ 1 + ;",
 	": CR 10 emit ;",
 	": IF compile 0branch here 0 , ; immediate",
 	": THEN here swap ! ; immediate",
@@ -777,9 +794,9 @@ int main_routine()
 	assert(sizeof(size_t) == sizeof(cell_t));
 	compiling = false;
 	add_primitives();
-	puts("added primitives");
-	//add_derived();
-	puts("skipped derived");
+	//puts("added primitives");
+	add_derived();
+	//puts("skipped derived");
 
 	if(0) {
 		puts("words are");
