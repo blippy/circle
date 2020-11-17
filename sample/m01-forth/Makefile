@@ -4,6 +4,8 @@ OBJS	= main.o kernel.o
 OBJS += forth.o
 OBJS += compat.o printf.o
 
+OPTIMIZE = -O0
+
 LIBS	= $(CIRCLEHOME)/lib/usb/libusb.a \
 	  $(CIRCLEHOME)/lib/input/libinput.a \
 	  $(CIRCLEHOME)/lib/fs/libfs.a \
