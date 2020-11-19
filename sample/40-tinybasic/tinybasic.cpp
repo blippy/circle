@@ -59,6 +59,7 @@
 #define kVersion "v0.16"
 #include "kernel.h"
 
+#define DRIVE "SD:"
 
 char eliminateCompileErrors = 1;  // fix to suppress arduino build errors
 
@@ -349,7 +350,7 @@ typedef short unsigned LINENUM;
 
 
 static unsigned char program[kRamSize];
-static const char *  sentinel = "HELLO";
+//static const char *  sentinel = "HELLO";
 static unsigned char *txtpos,*list_line, *tmptxtpos;
 static unsigned char expression_error;
 static unsigned char *tempsp;
@@ -386,6 +387,7 @@ const static unsigned char keywords[] PROGMEM = {
 	'E','N','D'+0x80,
 	'R','S','E','E','D'+0x80,
 	'C','H','A','I','N'+0x80,
+	'D','I','R'+0x80,
 #ifdef ENABLE_TONES
 	'T','O','N','E','W'+0x80,
 	'T','O','N','E'+0x80,
@@ -415,6 +417,7 @@ enum {
 	KW_END,
 	KW_RSEED,
 	KW_CHAIN,
+	KW_DIR,
 #ifdef ENABLE_TONES
 	KW_TONEW, KW_TONE, KW_NOTONE,
 #endif
@@ -497,7 +500,7 @@ const static unsigned char highlow_tab[] PROGMEM = {
 static unsigned char *stack_limit;
 static unsigned char *program_start;
 static unsigned char *program_end;
-static unsigned char *stack; // Software stack for things that should go on the CPU stack
+//static unsigned char *stack; // Software stack for things that should go on the CPU stack
 static unsigned char *variables_begin;
 static unsigned char *current_line;
 static unsigned char *sp;
@@ -1062,8 +1065,8 @@ void loop()
 	unsigned char *newEnd;
 	unsigned char linelen;
 	boolean isDigital;
-	boolean alsoWait = false;
-	int val;
+	//boolean alsoWait = false; // apparently unused
+	//int val; // apparently unused
 
 #ifdef ARDUINO
 #ifdef ENABLE_TONES
@@ -1309,6 +1312,8 @@ interperateAtTxtpos:
 			goto list;
 		case KW_CHAIN:
 			goto chain;
+		case KW_DIR:
+			goto dir;
 		case KW_LOAD:
 			goto load;
 		case KW_MEM:
@@ -1782,7 +1787,7 @@ dwrite:
 	}
 	goto run_next_statement;
 #else
-pinmode: // PINMODE <pin>, I/O
+	//pinmode: // PINMODE <pin>, I/O
 awrite: // AWRITE <pin>,val
 dwrite:
 	goto unimplemented;
@@ -1807,7 +1812,35 @@ type:
 
 chain:
 	runAfterLoad = true;
+dir:
+	{
+		DIR Directory;
+		FILINFO FileInfo;
+		FRESULT Result = f_findfirst (&Directory, &FileInfo, DRIVE "/", "*");
+		for (unsigned i = 0; Result == FR_OK && FileInfo.fname[0]; i++)
+		{
+			if (!(FileInfo.fattrib & (AM_HID | AM_SYS)))
+			{
+				CString FileName;
+				FileName.Format ("%-19s", FileInfo.fname);
 
+				//m_Screen.Write ((const char *) FileName, FileName.GetLength ());
+				puts((const char*) FileName);
+
+				if (i % 4 == 3)
+				{
+					//m_Screen.Write ("\n", 1);
+					putchar('\n');
+				}
+			}
+
+			Result = f_findnext (&Directory, &FileInfo);
+		}
+		//m_Screen.Write ("\n", 1);
+		putchar('\n');
+		goto run_next_statement;
+
+	}
 load:
 	// clear the program
 	program_end = program_start;
@@ -2060,7 +2093,7 @@ static unsigned char breakcheck(void)
 /***********************************************************/
 static int inchar()
 {
-	int v;
+	//int v;
 
 	switch( inStream ) {
 		case( kStreamFile ): 
@@ -2069,7 +2102,7 @@ static int inchar()
 				//putchar('.');
 				UINT n;
 				char c;
-				FRESULT res = f_read(&fp, &c, 1, &n);
+				//FRESULT res = f_read(&fp, &c, 1, &n);
 				//putchar(c);
 				//if(res != FR_OK) putchar('X');
 				if( c == NL ) c=CR; // file translate

@@ -35,6 +35,7 @@
 #include <fatfs/ff.h>
 #include <circle/types.h>
 #include <circle/input/keyboardbuffer.h>
+#include <circle/fs/fat/fatfs.h>
 
 
 enum TShutdownMode
