@@ -14,7 +14,11 @@ extern CKernel *g_kernel;
 extern "C" void _putchar(char character)
 {
 	g_kernel->m_Screen.Write(&character, 1);
-	//return character;
+}
+
+extern "C" void putchar(char c)
+{
+	_putchar(c);
 }
 
 int getchar()
@@ -27,6 +31,12 @@ int getchar()
 		
 	if(c || getchar_echo) _putchar(c);
 	return c;
+}
+
+void exit(int status)
+{
+	puts("Exiting. Hanging now");
+	while(1);
 }
 
 /* reads  the next character from stream and returns it as an 

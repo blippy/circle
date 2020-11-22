@@ -195,9 +195,11 @@ $(TARGET).hex: $(TARGET).img
 monitor:
 	putty -serial $(SERIALPORT) -sercfg $(USERBAUD)
 
+SD = /media/pi/8BC8-8129
+
 install:
-	cp *img /media/pi/5794-CDC0
+	cp *img $(SD)
 	ls -hal *img
-	umount /media/pi/5794-CDC0
+	umount $(SD)
 
 flash : install

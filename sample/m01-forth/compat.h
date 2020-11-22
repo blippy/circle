@@ -18,6 +18,8 @@ int feof(FILE* stream);
 
 void puts(const char* str);
 int getchar();
+void putchar(char c);
+void exit(int status);
 
 #ifdef __cplusplus
 }
